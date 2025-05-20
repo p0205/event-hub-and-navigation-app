@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
-import '../../services/api.dart';
-import '../../services/secure_storage_service.dart';
+import '../services/api.dart';
+import '../services/secure_storage_service.dart';
 
 class AuthRepository {
   final SecureStorageService _secureStorage = SecureStorageService();

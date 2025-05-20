@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:event_hub_and_navigation_app/auth/repositories/auth_repository.dart';
+import 'package:event_hub_and_navigation_app/repositories/auth_repository.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'auth/bloc/auth_bloc.dart';
 import 'auth/screens/sign_in_screen.dart';
-import 'home/home_page.dart';
+import 'home/screens/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -49,9 +49,9 @@ class ApiService {
   static Dio get dio => _dio;
 
   // Your other methods no longer need to call await init();
-  static Future<Response> get(String path) async {
+  static Future<Response> get(String path,Map<String, dynamic>? queryParameters) async {
     print("Sending request to $path");
-    return _dio.get(path);
+    return _dio.get(path,queryParameters: queryParameters);
   }
 
   static Future<Response> post(String path, {Map<String, dynamic>? data}) async {
