@@ -1,7 +1,48 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-void main() {
-  runApp(const MyApp());
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:event_hub_and_navigation_app/auth/repositories/auth_repository.dart';
+import 'package:event_hub_and_navigation_app/services/api.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'auth/bloc/auth_bloc.dart';
+import 'auth/screens/sign_in_screen.dart';
+import 'home/home_page.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // --- IMPORTANT: Add the CookieManager setup here first ---
+  // Get the application documents directory for storing cookies persistently
+  final appDocDir = await getApplicationDocumentsDirectory();
+  final appDocPath = appDocDir.path;
+  final cookieJar = PersistCookieJar(storage: FileStorage(Directory("$appDocPath/.cookies/").path));
+
+  // Add CookieManager to Dio's interceptors via ApiService.dio
+  ApiService.dio.interceptors.add(CookieManager(cookieJar));
+  // --- END CookieManager setup ---
+
+  // --- CALL YOUR LOGGING INTERCEPTOR INITIALIZATION HERE ---
+  await ApiService.initializeDioWithInterceptors(); // <--- THIS IS THE MISSING CALL!
+  // --- END CALL ---
+
+
+  // Initialize the Api client BEFORE running the app
+  // This ensures cookies can be managed from the start
+
+  runApp(
+
+    MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>(
+            create: (context) => AuthBloc(authRepository: AuthRepository()),
+          ),
+          // Add other BLoCs here
+        ],
+      child: const MyApp()))
+    ;
 }
 
 class MyApp extends StatelessWidget {
@@ -18,7 +59,8 @@ class MyApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const SignInScreen()
+
     );
   }
 }
