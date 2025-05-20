@@ -6,10 +6,11 @@ import '../services/api.dart';
 class EventRepository {
   EventRepository();
 
+
   Future<List<CalendarEvent>> getCalendarEvents(int userId) async {
     try {
       final response = await ApiService.get(
-        '/calendar', {'userId': userId}, // Pass userId as a query parameter
+        '/events/calendar', {'userId': userId}, // Pass userId as a query parameter
       );
 
       if (response.statusCode == 200) {
@@ -23,18 +24,24 @@ class EventRepository {
             'Failed to load calendar events: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      // Handle Dio-specific errors
+      // *** IMPORTANT: Print the full DioException object here ***
+      print('DIO_EXCEPTION_DEBUG: Type: ${e.type}');
+      print('DIO_EXCEPTION_DEBUG: Message: ${e.message}');
+      print('DIO_EXCEPTION_DEBUG: Error: ${e.error}');
+      print('DIO_EXCEPTION_DEBUG: Request Options: ${e.requestOptions.uri}');
       if (e.response != null) {
-        // Server responded with an error status code
-        throw Exception(
-            'Server error fetching events: ${e.response?.statusCode} - ${e.response?.data}');
+        print('DIO_EXCEPTION_DEBUG: Response Status Code: ${e.response?.statusCode}');
+        print('DIO_EXCEPTION_DEBUG: Response Data: ${e.response?.data}');
+        print('DIO_EXCEPTION_DEBUG: Response Headers: ${e.response?.headers}');
       } else {
-        // Request error (e.g., network issues)
-        throw Exception('Network error fetching events: ${e.message}');
+        print('DIO_EXCEPTION_DEBUG: No response received.');
       }
+      // Re-throw the exception so your BLoC still catches it
+      rethrow;
     } catch (e) {
       // Catch any other exceptions
-      throw Exception('An unexpected error occurred: $e');
+      print('UNEXPECTED_ERROR_DEBUG: $e');
+      rethrow; // Re-throw the exception
     }
   }
 }

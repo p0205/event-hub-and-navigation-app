@@ -8,9 +8,9 @@ part 'home_event.dart';
 part 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  final EventRepository eventService;
+  final EventRepository eventService = EventRepository();
 
-  HomeBloc(this.eventService) : super(HomeInitial()) {
+  HomeBloc() : super(HomeInitial()) {
     on<FetchCalendarEvents>(_onFetchEvents);
   }
 

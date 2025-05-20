@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/repositories/auth_repository.dart';
+import 'package:event_hub_and_navigation_app/repositories/event_repository.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,6 +40,9 @@ Future<void> main() async {
         providers: [
           BlocProvider<AuthBloc>(
             create: (context) => AuthBloc(authRepository: AuthRepository()),
+          ),
+          BlocProvider<HomeBloc>(
+            create: (context) => HomeBloc()
           ),
           // Add other BLoCs here
         ],

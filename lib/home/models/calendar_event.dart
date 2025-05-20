@@ -1,10 +1,19 @@
+
+// Helper functions for DateTime serialization/deserialization
+import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+
+@JsonSerializable()
 class CalendarEvent {
   final int? eventId;
   final String? eventName;
   final int? sessionId;
   final String? sessionName;
-  final DateTime? startDateTime; // Maps to LocalDateTime
-  final DateTime? endDateTime; // Maps to LocalDateTime
+
+  final String? startDateTime;
+
+  final String? endDateTime;
   final String? venueNames;
 
   CalendarEvent({
@@ -35,7 +44,7 @@ class CalendarEvent {
       'eventName': eventName,
       'sessionId': sessionId,
       'sessionName': sessionName,
-      'startDateTime': startDateTime,
+      'startDateTime':startDateTime,
       'endDateTime': endDateTime,
       'venueNames': venueNames,
     };

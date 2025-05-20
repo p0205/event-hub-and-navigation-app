@@ -45,6 +45,7 @@ dependencies:
   http: ^1.4.0
   dio_cookie_manager: ^3.2.0
   cookie_jar: ^4.0.8
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:

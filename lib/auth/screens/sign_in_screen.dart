@@ -1,3 +1,4 @@
+import 'package:event_hub_and_navigation_app/home/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
@@ -33,8 +34,16 @@ class _SignInScreenState extends State<SignInScreen> {
           if (state is AuthAuthenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sign-in successful!')),
+
             );
-            // Navigate to main/home page
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(userId: 1)),
+
+            );
+            // Navig
+            // ate to main/home page
             // Navigator.pushReplacementNamed(context, '/home');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
