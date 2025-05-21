@@ -31,23 +31,23 @@ class _SignInScreenState extends State<SignInScreen> {
       appBar: AppBar(title: const Text('Sign In')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthAuthenticated) {
+          if (state is AuthenticatedState) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sign-in successful!')),
 
             );
+
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => HomePage(userId: 1)),
+                builder: (context) => HomePage()),
 
             );
-            // Navig
-            // ate to main/home page
+            // Navigate to main/home page
             // Navigator.pushReplacementNamed(context, '/home');
-          } else if (state is AuthError) {
+          } else if (state is ErrorState) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(content: Text('Login failed: ${state.error}')),
             );
           }
         },
@@ -106,10 +106,10 @@ class _SignInScreenState extends State<SignInScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: state is AuthLoading
+                          onPressed: state is AuthLoadingState
                               ? null
                               : () => _onSignInPressed(context),
-                          child: state is AuthLoading
+                          child: state is AuthLoadingState
                               ? const CircularProgressIndicator(color: Colors.white)
                               : const Text('Sign In'),
                         ),

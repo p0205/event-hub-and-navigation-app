@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
-import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart'; // Ensure this points to calendar_event_model.dart if that's the name
+import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
+
+import '../../auth/bloc/auth_bloc.dart'; // Ensure this points to calendar_event_model.dart if that's the name
 // import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // This might not be needed anymore, remove if unused
 
 class HomePage extends StatefulWidget {
-  final int userId;
 
-  const HomePage({Key? key, required this.userId}) : super(key: key);
+
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -24,16 +26,36 @@ class _HomePageState extends State<HomePage> {
 
   // Change map key type to DateTime, and value to List<CalendarEvent>
   Map<DateTime, List<CalendarEvent>> _events = {};
+  int? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    // Ensure HomeBloc is provided higher up in the widget tree using BlocProvider
-    // If not, you might need to create it like this:
-    // _homeBloc = HomeBloc(EventRepository(EventService(ApiService.dio)));
-    // But prefer accessing it via context.read<HomeBloc>() if it's already provided.
-    _homeBloc = BlocProvider.of<HomeBloc>(context); // Access the provided Bloc
-    _homeBloc.add(FetchCalendarEvents(widget.userId));
+    _homeBloc = BlocProvider.of<HomeBloc>(context);
+
+    // Use addPostFrameCallback to ensure context is fully built and
+    // BlocProviders are available before attempting to read other blocs.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Access the AuthBloc here
+      final authState = context.read<AuthBloc>().state;
+
+      if (authState is AuthenticatedState) {
+        _currentUserId = authState.user.id; // Get the userId from the authenticated user
+        print("Logged in userId: $_currentUserId"); // For debugging
+
+        // Now dispatch the event to HomeBloc with the fetched userId
+        _homeBloc.add(FetchCalendarEvents(_currentUserId!));
+      } else {
+        // Handle the case where the user is not authenticated.
+        // This usually means navigating them back to the login screen,
+        // or showing an error message.
+        print("Error: User is not authenticated on HomePage.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You are not logged in. Please log in.')),
+        );
+        // Example: Navigator.of(context).pushReplacementNamed('/login');
+      }
+    });
 
     // Initialize _selectedDay to _focusedDay so that events for today are shown by default
     _selectedDay = _focusedDay;
@@ -44,7 +66,7 @@ class _HomePageState extends State<HomePage> {
     // Note: If HomeBloc is provided higher up (e.g., in main.dart),
     // it should usually be disposed by the BlocProvider itself.
     // If you explicitly create it here, then disposing it here is correct.
-    _homeBloc.close();
+    // _homeBloc.close();
     super.dispose();
   }
 
@@ -72,33 +94,15 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event Hub'),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Search functionality coming soon!')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filter options coming soon!')),
-              );
-            },
-          ),
-        ],
+        title: const Text('Home'),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        backgroundColor: Color.fromARGB(255, 245, 197, 66)
       ),
       body: BlocConsumer<HomeBloc, HomeState>(
         bloc: _homeBloc,
         listener: (context, state) {
           if (state is CalendarEventLoaded) {
-            print("Enter listener... State is CalendarEventLoaded");
             _events = {}; // Clear map for fresh data
             for (var event in state.events) {
               if (event.startDateTime != null) {
@@ -138,30 +142,9 @@ class _HomePageState extends State<HomePage> {
         builder: (context, state) {
           return Column(
             children: [
-              TableCalendar<CalendarEvent>(
-                firstDay: DateTime.utc(2024, 1, 1),
-                lastDay: DateTime.utc(2025, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: _onDaySelected,
-                onFormatChanged: (format) {
-                  setState(() {
-                    _calendarFormat = format;
-                  });
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                },
-                eventLoader: _getEventsForDay,
-                // Uses the corrected function
-                calendarStyle: const CalendarStyle(
-                  markersMaxCount: 3,
-                  markerDecoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: eventCalendar(),
               ),
               const Divider(),
               Expanded(
@@ -259,5 +242,41 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+
+
+  }
+
+  Widget eventCalendar (){
+    return TableCalendar<CalendarEvent>(
+      firstDay: DateTime.utc(2024, 1, 1),
+      lastDay: DateTime.utc(2025, 12, 31),
+      focusedDay: _focusedDay,
+      calendarFormat: _calendarFormat,
+      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+      onDaySelected: _onDaySelected,
+      headerStyle: HeaderStyle(
+            formatButtonVisible: false,
+          titleCentered: true
+      ),
+      onFormatChanged: (format) {
+        setState(() {
+          _calendarFormat = format;
+        });
+      },
+      onPageChanged: (focusedDay) {
+        _focusedDay = focusedDay;
+      },
+      eventLoader: _getEventsForDay,
+      // Uses the corrected function
+      calendarStyle: const CalendarStyle(
+        markersMaxCount: 1,
+        markerDecoration: BoxDecoration(
+          color: Colors.blue,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
   }
 }
+
+
