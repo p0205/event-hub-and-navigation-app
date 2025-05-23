@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
+import 'package:event_hub_and_navigation_app/my_events/bloc/event_bloc.dart';
 import 'package:event_hub_and_navigation_app/repositories/auth_repository.dart';
 import 'package:event_hub_and_navigation_app/repositories/event_repository.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
@@ -43,6 +44,9 @@ Future<void> main() async {
           ),
           BlocProvider<HomeBloc>(
             create: (context) => HomeBloc()
+          ),
+          BlocProvider<EventBloc>(
+              create: (context) => EventBloc()
           ),
           // Add other BLoCs here
         ],

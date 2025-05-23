@@ -1,6 +1,4 @@
 
-// Helper functions for DateTime serialization/deserialization
-import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 

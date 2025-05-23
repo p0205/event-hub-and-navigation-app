@@ -1,3 +1,4 @@
+import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -205,8 +206,11 @@ class _HomePageState extends State<HomePage> {
             case 0:
               break;
             case 1:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Navigate to My Events Page')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => MyEventsPage()),
+
               );
               break;
             case 2:
