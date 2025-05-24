@@ -96,9 +96,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
-        centerTitle: true,
+
         automaticallyImplyLeading: false,
-        backgroundColor: Color.fromARGB(255, 245, 197, 66)
       ),
       body: BlocConsumer<HomeBloc, HomeState>(
         bloc: _homeBloc,

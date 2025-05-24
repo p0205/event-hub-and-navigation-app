@@ -14,7 +14,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<FetchMyUpcomingEvents>(_onFetchUpcomingEvents);
 
     on<FetchMyPastEvents>(_onFetchPastEvents);
-    // on<FetchEventDetails>(_onFetchEventDetails);
+    on<FetchEventDetails>(_onFetchEventDetails);
   }
 
   Future<void> _onFetchUpcomingEvents(
@@ -39,14 +39,14 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     }
   }
 
-  // Future<void> _onFetchEventDetails(
-  //     FetchEventDetails event, Emitter<EventState> emit) async {
-  //   emit(EventLoadingState());
-  //   try {
-  //     final events = await eventRepository.fetchEventDetails(event.eventId);
-  //     emit(EventLoadedState(events));
-  //   } catch (e) {
-  //     emit(EventErrorState(e.toString()));
-  //   }
-  // }
+  Future<void> _onFetchEventDetails(
+      FetchEventDetails event, Emitter<EventState> emit) async {
+    emit(EventDetailsLoadingState());
+    try {
+      final eventDetails = await eventRepository.fetchEventDetails(event.eventId);
+      emit(EventDetailsLoadedState(eventDetails));
+    } catch (e) {
+      emit(EventErrorState(e.toString()));
+    }
+  }
 }

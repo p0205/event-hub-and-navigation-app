@@ -30,6 +30,15 @@ final class EventLoadedState extends EventState {
 }
 
 
-final class PastEventLoadedState extends EventState {}
+final class EventDetailsInitialState extends EventState {}
 
-final class EventDetailsLoadedState extends EventState {}
+final class EventDetailsLoadingState extends EventState {}
+
+final class EventDetailsLoadedState extends EventState {
+  final Event event;
+
+  const EventDetailsLoadedState(this.event);
+
+  @override
+  List<Object> get props => [event];
+}

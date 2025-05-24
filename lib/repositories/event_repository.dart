@@ -13,7 +13,7 @@ class EventRepository {
     try {
       final response = await ApiService.get(
         '/events/calendar',
-        {'userId': userId}, // Pass userId as a query parameter
+        queryParameters: {'userId': userId}, // Pass userId as a query parameter
       );
 
       if (response.statusCode == 200) {
@@ -52,7 +52,7 @@ class EventRepository {
   Future<List<Event>> fetchMyUpcomingEvents(int userId) async {
     try {
       final response = await ApiService.get(
-          '/events/participant/upcoming-events', {'userId': userId});
+          '/events/participant/upcoming-events',  queryParameters:{'userId': userId});
       if (response.statusCode == HttpStatus.ok) {
         List<Event> events = Event.fromJsonArray(response.data);
         return events;
@@ -70,13 +70,31 @@ class EventRepository {
   Future<List<Event>> fetchMyPastEvents(int userId) async {
     try {
       final response = await ApiService.get(
-          '/events/participant/past-events', {'userId': userId});
+          '/events/participant/past-events',  queryParameters:{'userId': userId});
       if (response.statusCode == HttpStatus.ok) {
         List<Event> events = Event.fromJsonArray(response.data);
         return events;
       } else {
         throw Exception(
             'Failed to load upcoming events: ${response.statusCode}');
+      }
+    }  catch (e) {
+      // Catch any other exceptions
+      print('UNEXPECTED_ERROR_DEBUG: $e');
+      rethrow; // Re-throw the exception
+    }
+  }
+
+  Future<Event> fetchEventDetails(int eventId) async {
+    try {
+      final response = await ApiService.get(
+          '/events/participant/$eventId');
+      if (response.statusCode == HttpStatus.ok) {
+        Event eventDetails = Event.fromJson(response.data);
+        return eventDetails;
+      } else {
+        throw Exception(
+            'Failed to load event details: ${response.statusCode}');
       }
     }  catch (e) {
       // Catch any other exceptions

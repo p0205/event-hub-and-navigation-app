@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart'; // To get userId
 import 'package:event_hub_and_navigation_app/models/event.dart'; // Adjust path
-import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // For date formatting
+import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
+
+import 'event_details_page.dart'; // For date formatting
 
 class MyEventsPage extends StatefulWidget {
   const MyEventsPage({super.key});
@@ -175,13 +177,14 @@ class EventCard extends StatelessWidget {
       child: InkWell(
         // Use InkWell for tap effect
         onTap: () {
+
           // Navigate to EventDetailsPage when card is tapped
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => EventDetailsPage(event: event),
-          //   ),
-          // );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventDetailsPage(eventId : event.id),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),

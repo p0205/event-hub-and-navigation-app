@@ -5,7 +5,6 @@ import '../services/api.dart';
 import '../services/secure_storage_service.dart';
 
 class AuthRepository {
-  final SecureStorageService _secureStorage = SecureStorageService();
 
   Future<User> signIn(String email, String password) async {
 
@@ -17,6 +16,7 @@ class AuthRepository {
 
       // Check if the login was successful based on the status code
       if (response.statusCode == 200) {
+
         return User.fromJson(response.data);
       } else {
         // Handle unexpected non-200 status codes if your backend returns them for errors
@@ -43,10 +43,6 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await _secureStorage.deleteToken();
-  }
-
-  Future<String?> getSavedToken() async {
-    return await _secureStorage.getToken();
+    await ApiService.clearToken();
   }
 }

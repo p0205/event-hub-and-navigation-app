@@ -4,6 +4,11 @@ part of 'auth_bloc.dart';
 sealed class AuthEvent extends Equatable {
   const AuthEvent();
 }
+final class AppStarted extends AuthEvent {
+  @override
+  List<Object> get props => [];
+}
+
 
 final class SignInRequested extends AuthEvent {
   final String email;
