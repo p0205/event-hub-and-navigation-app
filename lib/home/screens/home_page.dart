@@ -1,4 +1,3 @@
-import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +5,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
 
-import '../../auth/bloc/auth_bloc.dart'; // Ensure this points to calendar_event_model.dart if that's the name
+import '../../auth/bloc/auth_bloc.dart';
+import '../../my_events/screens/event_details_page.dart'; // Ensure this points to calendar_event_model.dart if that's the name
 // import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // This might not be needed anymore, remove if unused
 
 class HomePage extends StatefulWidget {
@@ -91,6 +91,7 @@ class _HomePageState extends State<HomePage> {
     // after setState.
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,31 +164,43 @@ class _HomePageState extends State<HomePage> {
                                 itemBuilder: (context, index) {
                                   final event =
                                       _getEventsForDay(_selectedDay!)[index];
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 8.0,
-                                    ),
-                                    child: ListTile(
-                                      title: Text(
-                                          event.eventName ?? 'Unnamed Event'),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (event.sessionName != null)
-                                            Text(
-                                                'Session: ${event.sessionName}'),
-                                          if (event.venueNames != null)
-                                            Text('Venue: ${event.venueNames}'),
-                                          if (event.startDateTime != null)
-                                            // Directly use event.startDateTime, as it's already a DateTime
-                                            Text(
-                                              'Time: ${ DateHelper.dateTimeFromString(event.startDateTime)!.hour}:${ DateHelper.dateTimeFromString(event.startDateTime)!.minute.toString().padLeft(2, '0')}',
-                                            ),
-                                        ],
+                                  return InkWell(
+                                    onTap: () {
+
+                                      // Navigate to EventDetailsPage when card is tapped
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => EventDetailsPage(eventId : event.eventId! , shouldShowFeedbackBtn: false),
+                                        ),
+                                      );
+                                    },
+                                    child: Card(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                        vertical: 8.0,
                                       ),
-                                      isThreeLine: true,
+                                      child: ListTile(
+                                        title: Text(
+                                            event.eventName ?? 'Unnamed Event'),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (event.sessionName != null)
+                                              Text(
+                                                  'Session: ${event.sessionName}'),
+                                            if (event.venueNames != null)
+                                              Text('Venue: ${event.venueNames}'),
+                                            if (event.startDateTime != null)
+                                              // Directly use event.startDateTime, as it's already a DateTime
+                                              Text(
+                                                'Time: ${ DateHelper.dateTimeFromString(event.startDateTime)!.hour}:${ DateHelper.dateTimeFromString(event.startDateTime)!.minute.toString().padLeft(2, '0')}',
+                                              ),
+                                          ],
+                                        ),
+                                        isThreeLine: true,
+                                      ),
                                     ),
                                   );
                                 },

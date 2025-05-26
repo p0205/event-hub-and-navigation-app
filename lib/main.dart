@@ -3,19 +3,15 @@ import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:event_hub_and_navigation_app/auth/screens/app_entry_point.dart';
+import 'package:event_hub_and_navigation_app/feedback/bloc/feedback_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/my_events/bloc/event_bloc.dart';
-import 'package:event_hub_and_navigation_app/repositories/auth_repository.dart';
-import 'package:event_hub_and_navigation_app/repositories/event_repository.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
-import 'package:event_hub_and_navigation_app/services/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'auth/bloc/auth_bloc.dart';
-import 'auth/screens/sign_in_screen.dart';
-import 'home/screens/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,13 +40,16 @@ Future<void> main() async {
     MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc()..add(AppStarted()),
+            create: (context) => AuthBloc(),
           ),
           BlocProvider<HomeBloc>(
             create: (context) => HomeBloc()
           ),
           BlocProvider<EventBloc>(
               create: (context) => EventBloc()
+          ),
+          BlocProvider<FeedbackBloc>(
+              create: (context) => FeedbackBloc()
           ),
           // Add other BLoCs here
         ],

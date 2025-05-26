@@ -5,7 +5,6 @@ import 'package:event_hub_and_navigation_app/auth/models/user.dart';
 
 import '../exceptions/auth_exception.dart';
 import '../services/api.dart';
-import '../services/secure_storage_service.dart';
 import 'package:event_hub_and_navigation_app/utils/constant.dart' as constant;
 
 class AuthRepository {

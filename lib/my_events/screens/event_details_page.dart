@@ -1,17 +1,19 @@
+// Updated EventDetailsPage with feedback check
+import 'package:event_hub_and_navigation_app/feedback/screen/rating_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:event_hub_and_navigation_app/models/event.dart';
 import 'package:event_hub_and_navigation_app/models/session.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../bloc/event_bloc.dart';
+import '../../feedback/bloc/feedback_bloc.dart'; // Add this import
 
 class EventDetailsPage extends StatefulWidget {
   final int eventId;
-  final bool isPastEvent;
+  final bool shouldShowFeedbackBtn;
 
   const EventDetailsPage(
-      {super.key, required this.eventId, required this.isPastEvent});
+      {super.key, required this.eventId, required this.shouldShowFeedbackBtn});
 
   @override
   State<EventDetailsPage> createState() => _EventDetailsPageState();
@@ -19,149 +21,213 @@ class EventDetailsPage extends StatefulWidget {
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
   late EventBloc _eventBloc;
+  late FeedbackBloc _feedbackBloc;
+  bool _hasFeedback = false;
+  bool _isCheckingFeedback = true;
+  int? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _eventBloc = BlocProvider.of<EventBloc>(context);
+    _feedbackBloc = BlocProvider.of<FeedbackBloc>(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthenticatedState) {
+        _currentUserId = authState.user.id;
         _eventBloc.add(FetchEventDetails(eventId: widget.eventId));
+
+        // Check if user has already provided feedback for this event
+        if (widget.shouldShowFeedbackBtn) {
+          _feedbackBloc.add(CheckUserFeedbackEvent(
+            eventId: widget.eventId,
+            userId: _currentUserId!,
+          ));
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please log in to view your events.')),
         );
-        // Optionally: redirect to login
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<EventBloc, EventState>(
-      bloc: _eventBloc,
-      builder: (context, state) {
-        if (state is EventDetailsLoadedState) {
-          final event = state.event;
-          // final titleHeight = _calculateToolbarHeight(event.eventName);
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<FeedbackBloc, FeedbackState>(
+          listener: (context, state) {
+            if (state is FeedbackCheckState) {
+              setState(() {
+                _hasFeedback = state.hasFeedback;
+                _isCheckingFeedback = false;
+              });
+            } else if (state is FeedbackSubmittedState) {
+              // Update the feedback status when feedback is submitted
+              setState(() {
+                _hasFeedback = true;
+              });
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<EventBloc, EventState>(
+        bloc: _eventBloc,
+        builder: (context, state) {
+          if (state is EventDetailsLoadedState) {
+            final event = state.event;
 
-          return Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  event.eventName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    event.eventName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 5,
+                    overflow: TextOverflow.visible,
+                    softWrap: true,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 5,
-                  overflow: TextOverflow.visible,
-                  softWrap: true,
+                  centerTitle: true,
+                  backgroundColor: const Color.fromARGB(255, 245, 197, 66),
+                  toolbarHeight: 70,
                 ),
-                centerTitle: true,
-                backgroundColor: const Color.fromARGB(255, 245, 197, 66),
-                toolbarHeight: 70,
-              ),
-              body: CustomScrollView(
-                slivers: [
-                  SliverList(
-                    delegate: SliverChildListDelegate([
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('About Event',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 10),
-                            Text(
-                              event.description ?? 'No description available.',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Date: ${DateHelper.formatDate(event.startDateTime)} - ${DateHelper.formatDate(event.endDateTime)}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 10),
-                            Text('Organizer: ${event.organizer}',
-                                style: const TextStyle(fontSize: 16)),
-                            if (event.picName != null &&
-                                event.picContact != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 5.0),
-                                child: Text(
-                                  'PIC: ${event.picName} (${event.picContact})',
-                                  style: const TextStyle(fontSize: 16),
-                                ),
+                body: CustomScrollView(
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('About Event',
+                                  style: TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              Text(
+                                event.description ?? 'No description available.',
+                                style: const TextStyle(fontSize: 16),
                               ),
-                          ],
+                              const SizedBox(height: 10),
+                              Text(
+                                'Date: ${DateHelper.formatDate(event.startDateTime)} - ${DateHelper.formatDate(event.endDateTime)}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 10),
+                              Text('Organizer: ${event.organizer}',
+                                  style: const TextStyle(fontSize: 16)),
+                              if (event.picName != null &&
+                                  event.picContact != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 5.0),
+                                  child: Text(
+                                    'PIC: ${event.picName} (${event.picContact})',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const Divider(thickness: 1, height: 30),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Sessions',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 10),
-                            if (event.sessions!.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 10.0),
-                                child: Text(
-                                    'No sessions available for this event.'),
-                              )
-                            else
-                              ...event.sessions!.map((session) =>
-                                  _buildSessionCard(context, session)),
-                          ],
+                        const Divider(thickness: 1, height: 30),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Sessions',
+                                  style: TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              if (event.sessions!.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 10.0),
+                                  child: Text(
+                                      'No sessions available for this event.'),
+                                )
+                              else
+                                ...event.sessions!.map((session) =>
+                                    _buildSessionCard(context, session)),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ]),
-                  ),
-                ],
+                        const SizedBox(height: 20),
+                      ]),
+                    ),
+                  ],
+                ),
+                // Updated FloatingActionButton logic
+                floatingActionButton: _buildFeedbackButton(event));
+          } else if (state is EventErrorState) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Event Details'),
               ),
-              // --- Floating Action Button (FAB) ---
+              body: Center(child: Text(state.message)),
+            );
+          } else if (state is EventDetailsLoadingState) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          } else {
+            return const Scaffold(
+              body: Center(child: Text('No event data available.')),
+            );
+          }
+        },
+      ),
+    );
+  }
 
-              floatingActionButton: widget.isPastEvent
-                  ? FloatingActionButton.extended(
-                      onPressed: () {
-                        // TODO: Navigate to the feedback submission page/dialog
-                        print('Give Feedback FAB pressed!');
-                      },
-                      icon: const Icon(Icons.feedback),
-                      // Feedback icon
-                      label: const Text('Give Feedback'),
-                      // Text label
-                      backgroundColor: Color.fromARGB(255, 245, 197, 66),
-                      foregroundColor: Colors.black, // Text and icon color
-                    )
-                  : null);
-        } else if (state is EventErrorState) {
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Event Details'),
+  Widget? _buildFeedbackButton(dynamic event) {
+    // Don't show feedback button if:
+    // 1. shouldShowFeedbackBtn is false
+    // 2. Still checking for existing feedback
+    // 3. User has already provided feedback
+    if (!widget.shouldShowFeedbackBtn || _isCheckingFeedback) {
+      return null;
+    }
+
+    if (_hasFeedback) {
+      // Show a different button indicating feedback already provided
+      return FloatingActionButton.extended(
+        onPressed: null, // Disabled
+        icon: const Icon(Icons.check_circle),
+        label: const Text('Feedback Submitted'),
+        backgroundColor: Colors.grey[400],
+        foregroundColor: Colors.grey[600],
+      );
+    }
+
+    // Show the normal feedback button
+    return FloatingActionButton.extended(
+      onPressed: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventRatingPage(
+              eventId: event.id,
+              eventName: event.eventName,
             ),
-            body: Center(child: Text(state.message)),
-          );
-        } else if (state is EventDetailsLoadingState) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else {
-          return const Scaffold(
-            body: Center(child: Text('No event data available.')),
-          );
+          ),
+        );
+
+        // If feedback was submitted successfully, update the state
+        if (result == true) {
+          setState(() {
+            _hasFeedback = true;
+          });
         }
       },
+      icon: const Icon(Icons.feedback),
+      label: const Text('Give Feedback'),
+      backgroundColor: const Color.fromARGB(255, 245, 197, 66),
+      foregroundColor: Colors.black,
     );
   }
 
@@ -194,32 +260,32 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             const SizedBox(height: 10),
             if (session.venues!.isNotEmpty)
               ...session.venues!.map((venue) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Venue: ${venue.name}',
-                            style: const TextStyle(fontSize: 15),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Getting directions to ${venue.name} (Node: ${venue.nodeId})'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.directions),
-                          label: const Text('Get Directions'),
-                        ),
-                      ],
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Venue: ${venue.name}',
+                        style: const TextStyle(fontSize: 15),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ))
+                    TextButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Getting directions to ${venue.name} (Node: ${venue.nodeId})'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.directions),
+                      label: const Text('Get Directions'),
+                    ),
+                  ],
+                ),
+              ))
           ],
         ),
       ),

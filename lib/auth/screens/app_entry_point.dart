@@ -69,6 +69,7 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
     // *after* the fixed splash screen duration has passed.
     return BlocBuilder<AuthBloc, AuthState>(
       buildWhen: (previousState, currentState) {
+        print("currentState: $currentState");
         // Rebuild only if the splash screen has finished AND
         // the state is either AuthenticatedState or UnAuthenticatedState.
         // This prevents rebuilding during the splash screen's fixed duration,
@@ -82,10 +83,12 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
         // If the splash screen duration is not over yet,
         // always show the animated splash screen content.
         if (state is AuthenticatedState) {
+          print("state is AuthenticatedState");
           return const MainWrapper();
-        } else if(state is AuthenticatedState && state is! AuthInitialState ) {
+        } else if(state is UnAuthenticatedState) {
           // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
           // or any other state that's not AuthenticatedState after splash.
+
           return const SignInScreen();
         }
         else{

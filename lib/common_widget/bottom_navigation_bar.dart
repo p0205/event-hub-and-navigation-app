@@ -57,8 +57,8 @@ class _MainWrapperState extends State<MainWrapper> {
             label: 'My Events',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.map),
+            label: 'Map',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
