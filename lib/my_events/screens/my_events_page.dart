@@ -134,6 +134,7 @@ class _MyEventsPageState extends State<MyEventsPage>
   }
 
   Widget _buildEventList(List<Event> events, String type) {
+    bool isPastEvent = (type == 'Past' ) ? true :false;
     if (events.isEmpty) {
       return Center(
         child: Text(
@@ -147,7 +148,7 @@ class _MyEventsPageState extends State<MyEventsPage>
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        return EventCard(event: event); // Use a reusable EventCard widget
+        return EventCard(event: event, isPastEvent:isPastEvent ,); // Use a reusable EventCard widget
       },
     );
   }
@@ -156,8 +157,9 @@ class _MyEventsPageState extends State<MyEventsPage>
 // Reusable Widget for Event Display
 class EventCard extends StatelessWidget {
   final Event event;
+  final bool isPastEvent;
 
-  const EventCard({super.key, required this.event});
+  const EventCard({super.key, required this.event, required this.isPastEvent});
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +184,7 @@ class EventCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EventDetailsPage(eventId : event.id),
+              builder: (context) => EventDetailsPage(eventId : event.id , isPastEvent: isPastEvent,),
             ),
           );
         },

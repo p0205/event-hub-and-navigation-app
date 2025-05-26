@@ -1,4 +1,5 @@
 import 'dart:async'; // Required for Timer
+import 'package:event_hub_and_navigation_app/common_widget/bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart';
@@ -43,6 +44,7 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
 
     // Set a timer for the total splash screen duration (3 seconds)
     Timer(const Duration(seconds: 3), () {
+      print("MOUNTED: $mounted" );
       if (mounted) {
         setState(() {
           _splashScreenFinished = true; // Mark splash screen as finished
@@ -63,18 +65,30 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     // The BlocBuilder listens to AuthBloc state changes.
-    // only allow it to render HomePage or SignInScreen
+    // However, we only allow it to render HomePage or SignInScreen
     // *after* the fixed splash screen duration has passed.
     return BlocBuilder<AuthBloc, AuthState>(
       buildWhen: (previousState, currentState) {
-
+        // Rebuild only if the splash screen has finished AND
+        // the state is either AuthenticatedState or UnAuthenticatedState.
+        // This prevents rebuilding during the splash screen's fixed duration,
+        // and also prevents rebuilding for AuthLoadingState/ErrorState once
+        // _splashScreenFinished is true, as those are handled by the top-level
+        // listener in main.dart (as per previous discussions).
         return _splashScreenFinished &&
             (currentState is AuthenticatedState || currentState is UnAuthenticatedState ||  currentState is AuthInitialState);
       },
       builder: (context, state) {
         // If the splash screen duration is not over yet,
         // always show the animated splash screen content.
-        if (!_splashScreenFinished || state is AuthInitialState ) {
+        if (state is AuthenticatedState) {
+          return const MainWrapper();
+        } else if(state is AuthenticatedState && state is! AuthInitialState ) {
+          // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
+          // or any other state that's not AuthenticatedState after splash.
+          return const SignInScreen();
+        }
+        else{
           return Scaffold(
             backgroundColor: Colors.yellow.shade200, // Light yellow background
             body: FadeTransition(
@@ -101,17 +115,17 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
             ),
           );
         }
-        // Once the splash screen duration is over (_splashScreenFinished is true),
-        // then render based on the actual AuthBloc state.
-        else {
-          if (state is AuthenticatedState) {
-            return const HomePage();
-          } else {
-            // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
-            // or any other state that's not AuthenticatedState after splash.
-            return const SignInScreen();
-          }
-        }
+        // // Once the splash screen duration is over (_splashScreenFinished is true),
+        // // then render based on the actual AuthBloc state.
+        // else {
+        //   if (state is AuthenticatedState) {
+        //     return const HomePage();
+        //   } else {
+        //     // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
+        //     // or any other state that's not AuthenticatedState after splash.
+        //     return const SignInScreen();
+        //   }
+        // }
       },
     );
   }

@@ -21,6 +21,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onAuthCheckRequested(AppStarted event, Emitter<AuthState> emit) async {
+
     print("AuthBloc: Checking authentication state...");
     final token = await _storageService.getToken();
     final user = await _storageService.getUser();

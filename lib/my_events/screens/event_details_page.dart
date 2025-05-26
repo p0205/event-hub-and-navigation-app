@@ -8,8 +8,10 @@ import '../bloc/event_bloc.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final int eventId;
+  final bool isPastEvent;
 
-  const EventDetailsPage({super.key, required this.eventId});
+  const EventDetailsPage(
+      {super.key, required this.eventId, required this.isPastEvent});
 
   @override
   State<EventDetailsPage> createState() => _EventDetailsPageState();
@@ -46,83 +48,103 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           // final titleHeight = _calculateToolbarHeight(event.eventName);
 
           return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                event.eventName,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              appBar: AppBar(
+                title: Text(
+                  event.eventName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 5,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 5,
-                overflow: TextOverflow.visible,
-                softWrap: true,
+                centerTitle: true,
+                backgroundColor: const Color.fromARGB(255, 245, 197, 66),
+                toolbarHeight: 70,
               ),
-              centerTitle: true,
-              backgroundColor: const Color.fromARGB(255, 245, 197, 66),
-              toolbarHeight: 70,
-            ),
-            body: CustomScrollView(
-              slivers: [
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('About Event',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10),
-                          Text(
-                            event.description ?? 'No description available.',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Date: ${DateHelper.formatDate(event.startDateTime)} - ${DateHelper.formatDate(event.endDateTime)}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 10),
-                          Text('Organizer: ${event.organizer}',
-                              style: const TextStyle(fontSize: 16)),
-                          if (event.picName != null && event.picContact != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 5.0),
-                              child: Text(
-                                'PIC: ${event.picName} (${event.picContact})',
-                                style: const TextStyle(fontSize: 16),
-                              ),
+              body: CustomScrollView(
+                slivers: [
+                  SliverList(
+                    delegate: SliverChildListDelegate([
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('About Event',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 10),
+                            Text(
+                              event.description ?? 'No description available.',
+                              style: const TextStyle(fontSize: 16),
                             ),
-                        ],
+                            const SizedBox(height: 10),
+                            Text(
+                              'Date: ${DateHelper.formatDate(event.startDateTime)} - ${DateHelper.formatDate(event.endDateTime)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 10),
+                            Text('Organizer: ${event.organizer}',
+                                style: const TextStyle(fontSize: 16)),
+                            if (event.picName != null &&
+                                event.picContact != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 5.0),
+                                child: Text(
+                                  'PIC: ${event.picName} (${event.picContact})',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Divider(thickness: 1, height: 30),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Sessions',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10),
-                          if (event.sessions!.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 10.0),
-                              child: Text('No sessions available for this event.'),
-                            )
-                          else
-                            ...event.sessions!.map((session) => _buildSessionCard(context, session)),
-                        ],
+                      const Divider(thickness: 1, height: 30),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Sessions',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 10),
+                            if (event.sessions!.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10.0),
+                                child: Text(
+                                    'No sessions available for this event.'),
+                              )
+                            else
+                              ...event.sessions!.map((session) =>
+                                  _buildSessionCard(context, session)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                  ]),
-                ),
-              ],
-            ),
-          );
+                      const SizedBox(height: 20),
+                    ]),
+                  ),
+                ],
+              ),
+              // --- Floating Action Button (FAB) ---
+
+              floatingActionButton: widget.isPastEvent
+                  ? FloatingActionButton.extended(
+                      onPressed: () {
+                        // TODO: Navigate to the feedback submission page/dialog
+                        print('Give Feedback FAB pressed!');
+                      },
+                      icon: const Icon(Icons.feedback),
+                      // Feedback icon
+                      label: const Text('Give Feedback'),
+                      // Text label
+                      backgroundColor: Color.fromARGB(255, 245, 197, 66),
+                      foregroundColor: Colors.black, // Text and icon color
+                    )
+                  : null);
         } else if (state is EventErrorState) {
           return Scaffold(
             appBar: AppBar(
@@ -159,12 +181,12 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               children: [
                 Text(
                   session.sessionName,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 5),
-
             Text(
               'Time: $sessionTimeString',
               style: TextStyle(fontSize: 15, color: Colors.grey[700]),
@@ -172,38 +194,35 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             const SizedBox(height: 10),
             if (session.venues!.isNotEmpty)
               ...session.venues!.map((venue) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Venue: ${venue.name}',
-                        style: const TextStyle(fontSize: 15),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Getting directions to ${venue.name} (Node: ${venue.nodeId})'),
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Venue: ${venue.name}',
+                            style: const TextStyle(fontSize: 15),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.directions),
-                      label: const Text('Get Directions'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Getting directions to ${venue.name} (Node: ${venue.nodeId})'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.directions),
+                          label: const Text('Get Directions'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ))
-
+                  ))
           ],
         ),
       ),
     );
   }
-
-
 }

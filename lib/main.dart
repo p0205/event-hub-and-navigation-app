@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
       title: 'Event Hub',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 245, 197, 66)),
         appBarTheme:  AppBarTheme(
 
             centerTitle: true,
