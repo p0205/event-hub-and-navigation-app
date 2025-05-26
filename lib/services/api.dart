@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:event_hub_and_navigation_app/services/secure_storage_service.dart';
+import '../auth/models/user.dart';
 import '../utils/constant.dart' as constant;
 
 class ApiService {
@@ -34,10 +35,17 @@ class ApiService {
     }
   }
 
+
+
   /// Save token to secure storage and set header
   static Future<void> persistAndSetToken(String token) async {
     await _secureStorage.saveToken(token);
     setAuthToken(token);
+  }
+
+  static Future<void> persistAndSetUser(User user) async {
+    await _secureStorage.saveUser(user);
+
   }
 
   /// Clear token from secure storage and header
@@ -45,6 +53,7 @@ class ApiService {
     await _secureStorage.deleteToken();
     clearAuthToken();
   }
+
 
 
   /// Initializes interceptors (e.g., logging)

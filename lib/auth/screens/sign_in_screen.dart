@@ -31,6 +31,7 @@ class _SignInScreenState extends State<SignInScreen> {
       appBar: AppBar(title: const Text('Sign In')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
+          print("Listener in sign in screen, Current state: $state");
           if (state is AuthenticatedState) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sign-in successful!')),

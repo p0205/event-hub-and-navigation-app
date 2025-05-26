@@ -33,7 +33,7 @@ class Event {
       registerDate: json['registerDate'] as String?,
       startDateTime: DateTime.parse(json['startDateTime'] as String),
       endDateTime: DateTime.parse(json['endDateTime'] as String),
-      organizer: json['organizer'] as String?,
+      organizer: json['organizerName'] as String?,
       picName: json['picName'] as String?,
       picContact: json['picContact'] as String?,
       sessions: (json['sessions'] as List<dynamic>?)
@@ -43,7 +43,7 @@ class Event {
     );
   }
 
-  static List<Event> fromJsonArray(List<dynamic> jsonArrray){
-    return jsonArrray.map((json) => Event.fromJson(json)).toList();
+  static List<Event> fromJsonArray(List<dynamic> jsonArray){
+    return jsonArray.map((json) => Event.fromJson(json)).toList();
   }
 }

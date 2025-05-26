@@ -44,7 +44,7 @@ Future<void> main() async {
     MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc(authRepository: AuthRepository()),
+            create: (context) => AuthBloc()..add(AppStarted()),
           ),
           BlocProvider<HomeBloc>(
             create: (context) => HomeBloc()

@@ -145,7 +145,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
   Widget _buildSessionCard(BuildContext context, Session session) {
     String sessionTimeString =
-        '${DateHelper.formatTime(session.startDateTime)} - ${DateHelper.formatTime(session.endDateTime)}';
+        '${DateHelper.formatDate(session.startDateTime)} - ${DateHelper.formatDate(session.endDateTime)}';
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -164,6 +164,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               ],
             ),
             const SizedBox(height: 5),
+
             Text(
               'Time: $sessionTimeString',
               style: TextStyle(fontSize: 15, color: Colors.grey[700]),

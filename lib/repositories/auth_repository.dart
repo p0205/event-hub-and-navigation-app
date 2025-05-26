@@ -1,44 +1,93 @@
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:event_hub_and_navigation_app/auth/models/user.dart';
 
+import '../exceptions/auth_exception.dart';
 import '../services/api.dart';
 import '../services/secure_storage_service.dart';
+import 'package:event_hub_and_navigation_app/utils/constant.dart' as constant;
 
 class AuthRepository {
 
-  Future<User> signIn(String email, String password) async {
 
+  Future<User> signIn(String email, String password) async {
     try {
       final response = await ApiService.post('/auth/sign-in', data: {
         'email': email,
         'rawPassword': password,
       });
 
-      // Check if the login was successful based on the status code
       if (response.statusCode == 200) {
+        // ... (your existing cookie and user persistence logic) ...
+        final cookieJar = ApiService.dio.interceptors
+            .whereType<CookieManager>()
+            .map((e) => e.cookieJar)
+            .cast<CookieJar>()
+            .first;
 
-        return User.fromJson(response.data);
+        final uri = Uri.parse(constant.AppConstants.baseUrl);
+        final cookies = await cookieJar.loadForRequest(uri);
+
+        final Cookie? jwtCookie = cookies.cast<Cookie?>().firstWhere(
+              (cookie) => cookie?.name == 'jwt',
+          orElse: () => null,
+        );
+
+        if (jwtCookie != null) {
+          final token = jwtCookie.value;
+          await ApiService.persistAndSetToken(token);
+        }
+        User user = User.fromJson(response.data);
+        await ApiService.persistAndSetUser(user);
+        return user;
       } else {
-        // Handle unexpected non-200 status codes if your backend returns them for errors
-        throw Exception('Sign in failed with status: ${response.statusCode}');
+        throw AuthException('Sign in failed with status: ${response.statusCode}'); // Use a generic auth exception
       }
     } on DioException catch (e) {
-      // Re-throw specific errors for the BLoC to handle (e.g., InvalidCredentialsException)
       if (e.response != null) {
         if (e.response!.statusCode == 401) {
-          throw Exception('Invalid credentials provided.');
+          throw InvalidCredentialsException('Invalid email or password.'); // More specific message
         } else if (e.response!.statusCode == 400) {
-          throw Exception('Bad request: ${e.response!.data['error'] ?? 'Unknown error'}');
+          throw BadRequestException(e.response!.data['error'] ?? 'Bad request.'); // Use custom exception
         }
-        // General error for other server responses
-        throw Exception('Sign in failed: ${e.response!.data['message'] ?? 'Server error'}');
+        throw AuthException('Sign in failed: ${e.response!.data['message'] ?? 'Server error'}'); // Generic for other server errors
       } else {
-        // Network errors (e.g., no internet, DNS issue)
-        throw Exception('Network error during sign in: ${e.message}');
+        throw NetworkException('Please check your internet connection.'); // Use custom exception for network
       }
     } catch (e) {
-      // Any other unexpected errors
-      throw Exception('An unexpected error occurred: $e');
+      throw AuthException('An unexpected error occurred during sign in.'); // Use generic auth exception for others
+    }
+  }
+
+  Future<bool> validateToken() async {
+    try {
+      // Make a lightweight authenticated request. /auth/me is a good choice.
+      final response = await ApiService.get("/auth/me"); // Using POST, assuming /auth/me expects a token
+      // If the request succeeds, it means the token was valid.
+      // Optionally update user data if /auth/me returns it.
+      if (response.statusCode == 200) {
+        // If your /auth/me endpoint returns updated user data, save it:
+        // User user = User.fromJson(response.data);
+        // await ApiService.persistAndSetUser(user);
+        return true; // Token is valid
+      }
+      return false; // Unexpected status code
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response!.statusCode == 401) {
+          print('AuthRepository: Token validation failed: 401 Unauthorized.');
+          return false; // Token is invalid/expired
+        }
+        print('AuthRepository: Token validation failed with status: ${e.response!.statusCode}, message: ${e.response!.data}');
+        return false; // Other server errors
+      } else {
+        print('AuthRepository: Network error during token validation: ${e.message}');
+        return false; // Network errors
+      }
+    } catch (e) {
+      print('AuthRepository: An unexpected error occurred during token validation: $e');
+      return false; // Any other unexpected errors
     }
   }
 
