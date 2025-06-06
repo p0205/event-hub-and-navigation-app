@@ -1,3 +1,4 @@
+import 'package:event_hub_and_navigation_app/common_widget/bottom_navigation_bar.dart';
 import 'package:event_hub_and_navigation_app/home/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,7 +42,7 @@ class _SignInScreenState extends State<SignInScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => HomePage()),
+                builder: (context) => MainWrapper()),
 
             );
             // Navigate to main/home page

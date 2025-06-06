@@ -43,11 +43,19 @@ dependencies:
   path_provider: ^2.1.5
   equatable: ^2.0.7
   flutter_bloc: ^9.1.1
-  http: ^1.4.0
+  http: ^0.13.6
   dio_cookie_manager: ^3.2.0
   cookie_jar: ^4.0.8
   json_annotation: ^4.9.0
   shared_preferences: ^2.5.3
+  flutter_map: ^4.0.0
+  flutter_polyline_points: ^1.0.0
+  flutter_svg: ^2.0.9
+  provider: ^6.1.5
+  carousel_slider: ^4.2.1
+  photo_view: ^0.14.0
+  cached_network_image: ^3.3.1
+  vector_math: ^2.1.4
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +73,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+
+    - assets/floorplan/ftmk_gf.svg
+    - assets/floorplan/ftmk_level1.svg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

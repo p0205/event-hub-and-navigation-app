@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:event_hub_and_navigation_app/services/secure_storage_service.dart';
 import '../auth/models/user.dart';
-import '../utils/constant.dart' as constant;
+import '../utils/constant.dart';
+
 
 class ApiService {
   static final Dio _dio = Dio(BaseOptions(
-    baseUrl: constant.AppConstants.baseUrl,
+    baseUrl: AppConstants.BaseUrl  + AppConstants.BasePort,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
     headers: {

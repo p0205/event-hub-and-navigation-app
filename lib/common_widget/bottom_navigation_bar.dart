@@ -2,6 +2,7 @@
 
 import 'package:event_hub_and_navigation_app/my_events/screens/event_details_page.dart';
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
+import 'package:event_hub_and_navigation_app/navigation/widgets/navigation_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,7 @@ class _MainWrapperState extends State<MainWrapper> {
   final List<Widget> _pages = [
     const HomePage(),
     const MyEventsPage(),
-    // const NotificationsPage(),
+    const NavigationScreen(),
     // const ProfilePage(),
   ];
 
