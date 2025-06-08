@@ -97,14 +97,7 @@ class NavigationDataProvider {
           'destination': destination,
         }),
       );
-      print(response.body);
-      print(source);
-      print(destination);
-      print(jsonEncode({
-        'source': source,
-        'destination': destination,
-      }));
-      print(response.statusCode);
+
 
       if (response.statusCode == 200) {
         return NavigationResponse.fromJson(jsonDecode(response.body));
@@ -113,7 +106,7 @@ class NavigationDataProvider {
         throw Exception(error['error'] ?? 'Failed to load navigation path');
       }
     } catch (e) {
-
+      
       throw Exception('Failed to connect to server: $e');
     }
   }

@@ -76,7 +76,9 @@ flutter:
   assets:
 
     - assets/floorplan/ftmk_gf.svg
-    - assets/floorplan/ftmk_level1.svg
+    - assets/floorplan/ftmk_level2.svg
+    - assets/floorplan/ftmk_level3.svg
+    - assets/floorplan/ftmk_level4.svg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

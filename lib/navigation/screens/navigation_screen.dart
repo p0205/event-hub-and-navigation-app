@@ -1,5 +1,6 @@
-// lib/widgets/navigation_screen
+// lib/screens/navigation_screen
 import 'package:flutter/material.dart';
+
 import '../models/floor_data.dart';
 import '../models/nav_path.dart';
 import '../models/nav_segment.dart';
@@ -8,10 +9,12 @@ import '../models/node.dart';
 import '../services/map_service.dart';
 import '../services/navigation_service.dart';
 import '../services/turn_instruction_service.dart';
+import '../widgets/map_marker.dart';
+import '../widgets/navigation_options_menu.dart';
 import 'interactive_svg_map.dart';
-import 'map_marker.dart'; // Still needed for getTurnAngle if used elsewhere or if TurnInstructionService depends on it
 
 class NavigationScreen extends StatefulWidget {
+
   const NavigationScreen({super.key});
 
   @override
@@ -40,18 +43,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
   String? _error;
   Node? _sourceNode;
   Node? _desNode;
+  Node? _userNode;
   List<MapMarker> venueNodes = [];
   List<MapMarker> stairNodes = [];
   List<String> _allVenuesName = [];
   List<FloorData> _floors = [];
+  bool _isStepByStep = true;
 
   // Navigation flow state
   Map<int,List<TurnInstruction>> _instructionsByFloor = {};
-  String _currentInstruction = "Select source and destination to find a path.";
+  late TurnInstruction _currentInstruction;
   int _currentPathPointIndex = 0;
   bool _isPendingRotation = false;
   int _previousPathPointIndex = -1;
-  Offset? _userLocationOnMap;
   bool _isNavigationCompleted = false;
 
   static const double _destinationReachedThreshold = 5.0;
@@ -61,10 +65,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
     super.initState();
     _currentFloorId = 1; // Set initial floor to Ground Floor
     _loadVenueNodes();
+    _currentInstruction = TurnInstruction(
+      location: Offset.zero,
+      instruction: "Select source and destination to find a path.",
+    );
 
     _floors = [
+      FloorData(name: 'Level 4', svgPath: 'assets/floorplan/ftmk_level4.svg', floorId: 4),
+      FloorData(name: 'Level 3', svgPath: 'assets/floorplan/ftmk_level3.svg', floorId: 3),
+      FloorData(name: 'Level 2', svgPath: 'assets/floorplan/ftmk_level2.svg', floorId: 2),
       FloorData(name: 'Ground Floor', svgPath: 'assets/floorplan/ftmk_gf.svg', floorId: 1),
-      FloorData(name: 'Level 1', svgPath: 'assets/floorplan/ftmk_level1.svg', floorId: 2)
+
     ];
   }
 
@@ -84,37 +95,70 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _resetNavigationState();
     });
 
+
     try {
       final result = await NavigationService.getNavigationPath(source, destination);
 
+      // Generate instructions first
+      final instructionsByFloor = TurnInstructionService.generateTurnInstructions(
+          result['simplifiedSegments'], result['desNode']);
+
+
+
+      // Switch to the source's floor if it's different from current floor
+      // print(_currentFloorId);
+      // print()
+      if (result['sourceNode'] != null && result['sourceNode'].floorId != _currentFloorId) {
+        // First update the floor
+        _interactiveMapKey.currentState?.changeFloor(result['sourceNode'].floorId);
+        // Wait for floor transition animation
+        // Optional: Add a delay before continuing navigation
+        await Future.delayed(const Duration(milliseconds: 800), () {
+          // Continue with navigation logic after floor change
+          if (mounted) {
+            // Update any other navigation state as needed
+            // print('Floor transition completed to: $floorName');
+          }
+        });
+      }
+
       setState(() {
-        // _isMultiLevel = result['isMultiLevel'];
         _sourceNode = result['sourceNode'];
         _desNode = result['desNode'];
-        _userLocationOnMap = result['userLocationOnMap'];
+        _userNode = result['sourceNode'];
         _simplifiedSegments = result['simplifiedSegments'];
         _pathsByFloor = result['pathsByFloor'];
         _transitionPoints = result['transitionPoints'];
         _involvedFloors = result['involvedFloors'];
-        _currentInstruction = "Start navigation";
-        // Generate instructions
-        _instructionsByFloor = TurnInstructionService.generateTurnInstructions(
-            _simplifiedSegments, _desNode);
-
+        _instructionsByFloor = instructionsByFloor;
         _isNavigationCompleted = false;
+        _currentFloorId = _sourceNode!.floorId;
+        // Set initial instruction
+        if (_instructionsByFloor.containsKey(_currentFloorId) &&
+            _instructionsByFloor[_currentFloorId]!.isNotEmpty) {
+          _currentInstruction = _instructionsByFloor[_currentFloorId]![0];
+        } else {
+          // _currentInstruction = "Start navigation";
+        }
+      });
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Center on the path after state updates
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_userNode != null) {
           _interactiveMapKey.currentState?.goToPointOnPath(
-            _userLocationOnMap!,
+            _userNode!.coord,
             alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
                 _getCurrentNavPath()!.points.length > 1 ? 0 : null,
           );
-        });
+        }
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
-        _currentInstruction = "Error: ${e.toString()}";
+        _currentInstruction = TurnInstruction(
+          location: Offset.zero,
+          instruction: "Error: ${e.toString()}",
+        );
       });
     } finally {
       setState(() {
@@ -124,29 +168,24 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   void _resetNavigationState() {
-
     _pathsByFloor.clear();
     _transitionPoints.clear();
     _involvedFloors.clear();
-    // _isMultiLevel = false;
     _currentFloorId = 1;
     _sourceNode = null;
     _desNode = null;
+    _userNode = null;
     _instructionsByFloor.clear();
-    _currentInstruction = "Finding path...";
     _currentPathPointIndex = 0;
     _isPendingRotation = false;
     _previousPathPointIndex = -1;
-    _userLocationOnMap = null;
     _isNavigationCompleted = false;
     _simplifiedSegments = [];
   }
 
   // Get the current NavPath based on current floor
   NavPath? _getCurrentNavPath() {
-
-      return _pathsByFloor[_currentFloorId];
-
+    return _pathsByFloor[_currentFloorId];
   }
 
   // Get transition points for current floor
@@ -155,36 +194,35 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   // Handle floor changes in multi-level navigation
-  void _handleFloorChange(String floorName) {
+  void _handleFloorChange(int floorId) {
     // Map floor names to floor IDs (adjust based on your floor naming)
-    int newFloorId = 1; // Default
-    switch (floorName) {
-      case 'Ground Floor':
-        newFloorId = 1;
-        break;
-      case 'Level 1':
-        newFloorId = 2;
-        break;
-      case 'Level 2':
-        newFloorId = 3;
-        break;
-    }
+
 
     setState(() {
-      _currentFloorId = newFloorId;
-      //
-      // if (_isMultiLevel) {
-      //   // Update instruction based on new floor
-      //   if (_involvedFloors.contains(newFloorId)) {
-      //     _currentInstruction = "Viewing Floor $newFloorId navigation path";
-      //   } else {
-      //     _currentInstruction = "No navigation path on Floor $newFloorId";
-      //   }
-      // }
+      _currentFloorId = floorId;
     });
 
     // Reload venue nodes for the new floor
-    _loadVenueNodes();
+    _loadVenueNodes().then((_) {
+      // After loading venue nodes, update the map if we have a navigation path
+      if (_pathsByFloor.containsKey(floorId)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _interactiveMapKey.currentState?.goToPointOnPath(
+            _userNode!.coord,
+            alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
+                _getCurrentNavPath()!.points.length > 1 ? 0 : null,
+          );
+        });
+      }
+    });
+  }
+
+  FloorData getCurrentFloorData(int currentFloorId){
+    // Find current floor data
+    return  _floors.firstWhere(
+          (floor) => floor.floorId == currentFloorId,
+      orElse: () => _floors.first,
+    );
   }
 
   Future<void> _handleNextNavigationStep() async {
@@ -197,43 +235,34 @@ class _NavigationScreenState extends State<NavigationScreen> {
       return;
     }
 
-      List<Offset> transitions = _getCurrentFloorTransitions();
-      if (transitions.isNotEmpty) {
-        // Check if user is near a transition point
-        for (Offset transitionPoint in transitions) {
-          if ((_userLocationOnMap! - transitionPoint).distance < _destinationReachedThreshold) {
-            await _handleFloorTransition();
-            currentPath = _getCurrentNavPath();
-            if (currentPath == null || currentPath.points.isEmpty) {
-              print('No navigation path available on the new floor');
-              return;
-            }
-
-            // Reset navigation state for new floor
-            setState(() {
-              _currentPathPointIndex = 0;
-              _previousPathPointIndex = -1;
-              _userLocationOnMap = currentPath!.points[0];
-              // _currentInstruction = "Continue navigation on ${_getFloorName(_currentFloorId)}";
-            });
-
-
+    // Check for floor transitions first
+    List<Offset> transitions = _getCurrentFloorTransitions();
+    if (transitions.isNotEmpty) {
+      // Check if user is near a transition point
+      for (Offset transitionPoint in transitions) {
+        if (_userNode != null &&
+            (_userNode!.coord - transitionPoint).distance < _destinationReachedThreshold) {
+          // Handle floor transition immediately
+          await _handleFloorTransition();
+          // After floor transition, continue with navigation on the new floor
+          currentPath = _getCurrentNavPath();
+          if (currentPath != null && currentPath.points.isNotEmpty) {
+            _handleSingleLevelNavigation(currentPath);
           }
-
-
+          return;
+        }
       }
     }
 
-      print("current path");
-      print(currentPath?.floorId);
 
-    _handleSingleLevelNavigation(currentPath!);
+    if (mounted) {
+      _handleSingleLevelNavigation(currentPath!);
+    }
   }
 
-  Future<void> _handleFloorTransition()async {
+  Future<void> _handleFloorTransition() async {
     // Check if map is currently transitioning to avoid conflicts
     if (_interactiveMapKey.currentState?.isTransitioning() == true) {
-      print('Floor transition already in progress, skipping...');
       return;
     }
 
@@ -242,59 +271,91 @@ class _NavigationScreenState extends State<NavigationScreen> {
       if (segment.segmentType == "inter_floor_transition" &&
           segment.startFloodId == _currentFloorId) {
 
+        // // Store the current floor ID before transition
+        // final int previousFloorId = _currentFloorId;
+        final int newFloorId = segment.endFloorId;
+
         setState(() {
-          _currentFloorId = segment.endFloorId;
-          _userLocationOnMap = segment.endCoord;
-          // _currentInstruction = "Moved to Floor $_currentFloorId via ${segment.segmentType}";
+          _currentFloorId = newFloorId;
+          _userNode = Node(
+            floorId: newFloorId,
+            nodeId: -1,
+            name: 'User',
+            coord: segment.endCoord,
+          );
+          // Reset navigation state for new floor
+          _currentPathPointIndex = 0;
+          _previousPathPointIndex = -1;
+          _isPendingRotation = true;
         });
 
         // Notify the map to change floors
-        final floorName = _getFloorName(_currentFloorId);
-        _interactiveMapKey.currentState?.changeFloor(floorName);
+        _interactiveMapKey.currentState?.changeFloor(newFloorId);
 
-        // Optional: Add a delay before continuing navigation
-        await Future.delayed(const Duration(milliseconds: 800), () {
-          // Continue with navigation logic after floor change
-          if (mounted) {
-            // Update any other navigation state as needed
-            print('Floor transition completed to: $floorName');
-          }
-        });
+        // Wait for floor transition to complete
+        await Future.delayed(const Duration(milliseconds: 800));
+
+        // After floor transition, update the navigation state
+        if (mounted) {
+          setState(() {
+            // Update navigation state for the new floor
+            if (_instructionsByFloor.containsKey(newFloorId)) {
+              List<TurnInstruction> instructions = _instructionsByFloor[newFloorId]!;
+              if (instructions.isNotEmpty) {
+                _currentInstruction = instructions[0];
+              }
+            }
+
+            // Ensure we have a valid path for the new floor
+            if (_pathsByFloor.containsKey(newFloorId)) {
+              NavPath newFloorPath = _pathsByFloor[newFloorId]!;
+              if (newFloorPath.points.isNotEmpty) {
+                // Update user position to the first point of the new floor's path
+                _userNode = Node(
+                  floorId: newFloorId,
+                  nodeId: -1,
+                  name: 'User',
+                  coord: newFloorPath.points[0],
+                );
+                _currentPathPointIndex = 0;
+              }
+            }
+          });
+
+          // Center the map on the user's new position
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_userNode != null) {
+              _interactiveMapKey.currentState?.goToPointOnPath(
+                _userNode!.coord,
+                alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
+                    _getCurrentNavPath()!.points.length > 1 ? 0 : null,
+              );
+            }
+          });
+        }
 
         break;
       }
     }
   }
 
-  String _getFloorName(int floorId) {
-    switch (floorId) {
-      case 1: return 'Ground Floor';
-      case 2: return 'Level 1';
-      case 3: return 'Level 2';
-      default: return 'Ground Floor';
-    }
-  }
-
   void _handleSingleLevelNavigation(NavPath currentPath) {
-    // Your existing navigation logic here
     if (_isPendingRotation) {
       setState(() {
-
         _isPendingRotation = false;
 
         List<TurnInstruction> instruction = TurnInstructionService.findInstructionForLocation(
-            _instructionsByFloor[_currentFloorId]!, _userLocationOnMap!);
+            _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
 
         if (instruction.length > 1) {
-          _currentInstruction = instruction[1].instruction;}
-        else{
-          _currentInstruction = instruction[0].instruction;
+          _currentInstruction = instruction[1];
+        } else {
+          _currentInstruction = instruction[0];
         }
-
       });
 
       _interactiveMapKey.currentState?.goToPointOnPath(
-        _userLocationOnMap!,
+        _userNode!.coord,
         alignMapToPathSegmentIndex: _currentPathPointIndex,
       );
     } else {
@@ -304,7 +365,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       if (nextPointIndex < currentPath.points.length && _desNode != null) {
         if (NavigationService.isMovingToDestination(
             currentPath.points[nextPointIndex],
-            (_desNode as Node).coord,
+            _desNode!.coord,
             _destinationReachedThreshold)) {
           isMovingToDestination = true;
         }
@@ -317,21 +378,29 @@ class _NavigationScreenState extends State<NavigationScreen> {
         if (_currentPathPointIndex >= currentPath.points.length) {
           _currentPathPointIndex = currentPath.points.length - 1;
         }
-        _userLocationOnMap = currentPath.points[_currentPathPointIndex];
+        _userNode = Node(
+          floorId: _currentFloorId,
+          nodeId: -1,
+          name: 'User',
+          coord: currentPath.points[_currentPathPointIndex],
+        );
       });
 
       if (isMovingToDestination ||
           (_currentPathPointIndex == currentPath.points.length - 1 &&
               _desNode != null &&
-              NavigationService.isDestinationReached(_userLocationOnMap!,
-                  (_desNode as Node).coord, _destinationReachedThreshold))) {
+              NavigationService.isDestinationReached(_userNode!.coord,
+                  _desNode!.coord, _destinationReachedThreshold))) {
         setState(() {
-          _currentInstruction = "Arrived at your destination.";
+          _currentInstruction = TurnInstruction(
+            location: _userNode!.coord,
+            instruction: "Arrived at your destination.",
+          );
           _isNavigationCompleted = true;
         });
 
         _interactiveMapKey.currentState?.goToPointOnPath(
-          _userLocationOnMap!,
+          _userNode!.coord,
           alignMapToPathSegmentIndex: null,
         );
 
@@ -349,61 +418,94 @@ class _NavigationScreenState extends State<NavigationScreen> {
       if (_currentPathPointIndex < currentPath.points.length - 1) {
         List<TurnInstruction> upcomingTurnInstruction =
         TurnInstructionService.findInstructionForLocation(
-            _instructionsByFloor[_currentFloorId]!, _userLocationOnMap!);
+            _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
         isUpcomingTurn = true;
         if (upcomingTurnInstruction.isNotEmpty) {
           nextInstructionText = upcomingTurnInstruction[0].instruction;
+          _currentInstruction = TurnInstruction(
+            location: _userNode!.coord,
+            instruction: nextInstructionText,
+            icon: upcomingTurnInstruction[0].icon,
+          );
         }
       } else {
         nextInstructionText = "Arrived at the end of the path.";
+        _currentInstruction = TurnInstruction(
+          location: _userNode!.coord,
+          instruction: nextInstructionText,
+        );
       }
 
       setState(() {
-        _currentInstruction = nextInstructionText;
-
         _isPendingRotation = isUpcomingTurn;
       });
 
       if (isUpcomingTurn) {
         _interactiveMapKey.currentState?.goToPointOnPath(
-          _userLocationOnMap!,
+          _userNode!.coord,
           alignMapToPathSegmentIndex: null,
         );
       } else {
         _interactiveMapKey.currentState?.goToPointOnPath(
-          _userLocationOnMap!,
+          _userNode!.coord,
           alignMapToPathSegmentIndex: _currentPathPointIndex,
         );
       }
     }
-
   }
+
+
+Future<void> _showNavigationOptions()  async {
+  showDialog(
+    context: context,
+    builder: (context) => NavigationOptionsMenu(
+      onNavigationOptionSelected: (isStepByStep) async {
+        if (isStepByStep) {
+            setState(() {
+              _isStepByStep = true;
+            });
+          } else {
+            // Show path on map
+            setState(() {
+              _isStepByStep = false;
+            });
+          }
+          await _getNavigationPath(_selectedSource!, _selectedDestination!);
+        
+      },
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('FTMK Map'),
+        title: Text('Indoor Navigation'),
       ),
       body: Stack(
         children: [
           Positioned.fill(
             child: InteractiveSvgMap(
               key: _interactiveMapKey,
-              naviPath: _getCurrentNavPath(), // Current floor's path
+              isStepByStep: _isStepByStep,
+              naviPath: _getCurrentNavPath(),
               source: _sourceNode,
               des: _desNode,
-              userLocation: _userLocationOnMap,
+              userNode: _userNode,
+              userLocation: _userNode?.coord,
               currentPathPointIndex: _currentPathPointIndex,
               venueNodes: venueNodes,
               stairNodes: stairNodes,
-              transitionPoints: _getCurrentFloorTransitions(), // Add transition points
+              transitionPoints: _getCurrentFloorTransitions(),
               onNavigationPressed: _handleNextNavigationStep,
               isNavigationEnabled: _getCurrentNavPath() != null && !_isNavigationCompleted,
               isLoading: _isLoading,
               floors: _floors,
-              currentFloor: _getFloorName(_currentFloorId),
               onFloorChanged: _handleFloorChange,
+
+              currentFloor: getCurrentFloorData(_currentFloorId),
+
             ),
           ),
           Column(
@@ -464,7 +566,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
                     ElevatedButton(
                       onPressed: () async {
                         if (_selectedSource != null && _selectedDestination != null) {
-                          await _getNavigationPath(_selectedSource!, _selectedDestination!);
+                          await _showNavigationOptions();
+                          // await _getNavigationPath(_selectedSource!, _selectedDestination!);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -493,24 +596,47 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 ),
                 child: Column(
                   children: [
-
-                      Text(
-                        _currentFloorId == 1 ? "Ground Floor" : 'Floor ${_currentFloorId-1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
                     Text(
-                      _currentInstruction,
+                      _currentFloorId == 1 ? "Ground Floor" : 'Level $_currentFloorId',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+
+                    if(_currentFloorId == _userNode?.floorId && _isStepByStep)
+                    Row(
+                      children: [
+                        if (_instructionsByFloor.containsKey(_currentFloorId) && 
+                            _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
+                            _currentInstruction.icon != null)
+                          SizedBox(
+                            width: 50,
+                            child:
+                              _currentInstruction.icon,
+
+                          ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              _instructionsByFloor.containsKey(_currentFloorId) ? _currentInstruction.instruction : "No instructions for this floor",
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        // Add an empty SizedBox with the same width as the icon to maintain symmetry
+                        if (_instructionsByFloor.containsKey(_currentFloorId) && 
+                            _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
+                            _currentInstruction.icon != null)
+                          const SizedBox(width: 50),
+                      ],
                     ),
                   ],
                 ),

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../models/floor_data.dart';
+
 class FloorNavigation extends StatelessWidget {
-  final List<String> floors;
-  final String currentFloor;
-  final Function(String) onFloorSelected;
+  final List<FloorData> floors;
+  final int currentFloorId;
+  final Function(int) onFloorSelected;
 
   const FloorNavigation({
     super.key,
     required this.floors,
-    required this.currentFloor,
+    required this.currentFloorId,
     required this.onFloorSelected,
   });
 
@@ -54,16 +56,18 @@ class FloorNavigation extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            direction: Axis.vertical,
             children: floors.map((floor) {
-              final isSelected = floor == currentFloor;
+              final isSelected = floor.floorId == currentFloorId;
               return ElevatedButton(
-                onPressed: () => onFloorSelected(floor),
+                onPressed: () => onFloorSelected(floor.floorId),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isSelected 
-                      ? Theme.of(context).primaryColor 
+                  backgroundColor: isSelected
+                      ? Theme.of(context).primaryColor
                       : Theme.of(context).cardColor,
-                  foregroundColor: isSelected 
-                      ? Colors.white 
+                  foregroundColor: isSelected
+                      ? Colors.white
                       : Theme.of(context).textTheme.bodyLarge?.color,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -72,14 +76,14 @@ class FloorNavigation extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                     side: BorderSide(
-                      color: isSelected 
-                          ? Theme.of(context).primaryColor 
+                      color: isSelected
+                          ? Theme.of(context).primaryColor
                           : Theme.of(context).dividerColor,
                     ),
                   ),
                 ),
                 child: Text(
-                  floor,
+                  floor.name,
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),

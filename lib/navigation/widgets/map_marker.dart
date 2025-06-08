@@ -15,7 +15,7 @@ class MapMarker extends StatelessWidget {
   MapMarker({
     super.key,
     required this.position,
-    this.label,
+     this.label,
     this.color = Colors.blue,
     this.radius = 10.0,
     this.mapRotation = 0.0,
@@ -49,7 +49,7 @@ class MapMarker extends StatelessWidget {
       label: name,
       imageUrl: image,
       floorId: floorId,
-      color: floorId == 1 ? Colors.blue : Colors.green, // Different colors for different floors
+      color: Colors.orange
     );
   }
 
@@ -241,17 +241,17 @@ class MapMarker extends StatelessWidget {
 
     if (imageUrl == null || imageUrl!.isEmpty) {
       print("MapMarker - No image URL available"); // Debug log
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
           title: Text(label ?? "Venue"),
           content: Text('No image available for ${label ?? "this venue"}.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
         ),
       );
       return;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/find_path_response.dart';
 import '../models/nav_path.dart';
-import '../models/node.dart';
 import '../repo/navigation_repo.dart';
 
 class NavigationService {
@@ -10,13 +10,12 @@ class NavigationService {
       String source, String destination) async {
     final NavigationResponse navResponse = await NavigationRepo.getNavigationPath(source: source, destination: destination);
     // Check if this is multi-level navigation
-    bool isMultiLevel = navResponse.isMultiLevel();
+
     Map<int, NavPath> pathsByFloor = navResponse.toMultiLevelNavPaths();
     Map<int, List<Offset>> transitionPoints = navResponse.getTransitionPoints();
     Set<int> involvedFloors = navResponse.getInvolvedFloors();
     Map<String, dynamic> result = {
-      'navigationResponse': navResponse, // Store the full response
-      // 'isMultiLevel': isMultiLevel,
+      'navigationResponse': navResponse,
       'sourceNode': navResponse.sourceNode,
       'desNode': navResponse.desNode,
       'userLocationOnMap': navResponse.sourceNode.coord,

@@ -1,6 +1,5 @@
 // lib/services/navigation_api.dart
 
-
 import '../models/find_path_response.dart';
 import 'navigation_data_provider.dart';
 

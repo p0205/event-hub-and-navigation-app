@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart' show Vector4;
 
@@ -7,16 +7,18 @@ import '../models/floor_data.dart';
 import '../models/nav_path.dart';
 import '../models/node.dart';
 import '../services/map_service.dart';
-import 'floor_navigation.dart';
-import 'floor_transition.dart';
-import 'map_marker.dart';
-import 'navigation_button_group.dart';
-import 'path_painter.dart';
+import '../widgets/floor_navigation.dart';
+import '../widgets/floor_transition.dart';
+import '../widgets/map_marker.dart';
+import '../widgets/navigation_button_group.dart';
+import '../widgets/path_painter.dart';
 
 class InteractiveSvgMap extends StatefulWidget {
+  final bool isStepByStep;
   final NavPath? naviPath;
   final Node? source;
   final Node? des;
+  final Node? userNode;
   final Offset? userLocation; // User's current location marker
   final int currentPathPointIndex;
   final List<MapMarker> venueNodes;
@@ -25,15 +27,17 @@ class InteractiveSvgMap extends StatefulWidget {
   final bool? isNavigationEnabled;
   final bool isLoading;
   final List<FloorData> floors;
-  final String currentFloor;
-  final Function(String)? onFloorChanged;
+  final FloorData currentFloor;
+  final Function(int)? onFloorChanged;
   final List<Offset>? transitionPoints;
 
   const InteractiveSvgMap({
     super.key,
+    required this.isStepByStep,
     this.naviPath,
     this.source,
     this.des,
+    this.userNode,
     this.userLocation,
     required this.venueNodes,
     required this.stairNodes,
@@ -76,7 +80,8 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
 
   late AnimationController _markerAnimationController;
   Animation<Offset?>? _markerPositionAnimation;
-  Offset? _currentDisplayedUserLocation;
+  Node? _currentUserNode;
+  
   bool _isShowLocationPin = true;
 
   bool _isUserGesturing =
@@ -98,13 +103,15 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
           _markerAnimationController.isAnimating;
 
   bool _isTransitioning = false;
-  String? _previousFloor;
+  int? _previousFloorId;
 
   @override
   void initState() {
     super.initState();
-    _svgSizeFuture = MapService.getSvgSize('assets/floorplan/ftmk_gf.svg',);
+        _svgSizeFuture = MapService.getSvgSize(widget.currentFloor.svgPath);
+    _currentUserNode = widget.userNode;
 
+    
     _mapAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(
@@ -177,9 +184,9 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
       final Offset? newMarkerPosSvg = _markerPositionAnimation!.value;
 
       if (newMarkerPosSvg == null) {
-        if (_currentDisplayedUserLocation != null) {
+        if (_currentUserNode != null) {
           setState(() {
-            _currentDisplayedUserLocation = null;
+            _currentUserNode = null;
           });
         }
         return;
@@ -187,7 +194,13 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
 
       // Always update the displayed marker position
       setState(() {
-        _currentDisplayedUserLocation = newMarkerPosSvg;
+
+        _currentUserNode = Node(
+          floorId: widget.userNode?.floorId ?? _currentUserNode?.floorId ?? 1,
+          nodeId: -1,
+          name: 'User',
+          coord: newMarkerPosSvg,
+        );
       });
 
       // Always center map on marker position when it updates (unless user is actively gesturing)
@@ -203,17 +216,23 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
       }
     });
 
-    _currentDisplayedUserLocation = widget.userLocation;
+    _currentUserNode = widget.userNode != null ? Node(
+      floorId: widget.userNode!.floorId,
+      nodeId: -1,
+      name: 'User',
+      coord: widget.userLocation!,
+    ) : null;
+
+   
   }
 
   bool _shouldCenterOnUser() {
     // Don't center if user is actively gesturing
-    if (_isUserGesturing) return false;
+
+    if (_isUserGesturing|| (widget.currentFloor.floorId != widget.userNode?.floorId)) return false;
 
     // Don't center if we're within the delay period after gesture ended
-    final currentTime = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
     if (currentTime - _gestureEndTime < _reTrackingDelayMs) return false;
 
     // Don't center if _relocateUserLocation is disabled
@@ -227,14 +246,15 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
     super.didUpdateWidget(oldWidget);
 
     bool userLocationChanged = widget.userLocation != oldWidget.userLocation;
+    bool userNodeChanged = widget.userNode != oldWidget.userNode;
 
-    if (userLocationChanged) {
+    if (userLocationChanged || userNodeChanged) {
       if (_markerAnimationController.isAnimating) {
         _markerAnimationController.stop();
       }
 
       if (widget.userLocation != null) {
-        Offset beginLocation = _currentDisplayedUserLocation ??
+        Offset beginLocation = _currentUserNode?.coord ??
             oldWidget.userLocation ??
             widget.userLocation!;
 
@@ -252,7 +272,12 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
         } else {
           // No animation needed, but still center if appropriate
           setState(() {
-            _currentDisplayedUserLocation = widget.userLocation;
+            _currentUserNode = Node(
+              floorId: widget.userNode?.floorId ?? _currentUserNode?.floorId ?? 1,
+              nodeId: -1,
+              name: 'User',
+              coord: widget.userLocation!,
+            );
           });
 
           // Center map immediately if conditions are met
@@ -262,14 +287,15 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
         }
       } else {
         setState(() {
-          _currentDisplayedUserLocation = null;
+          _currentUserNode = null;
         });
       }
     }
   }
 
-  void _centerMapOnUserLocation() {
-    if (_currentDisplayedUserLocation == null || !mounted) return;
+  void _centerMapOnUserLocation({double? preservedRotation}) {
+    if (_currentUserNode == null || !mounted) return;
+
 
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;
@@ -279,14 +305,12 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
     final double screenCenterY = visibleAreaSize.height / 2;
 
     // Calculate rotation based on path direction if available
-    double targetRotation = _rotation;
+    double targetRotation = preservedRotation ?? _rotation;
     bool shouldRotate = false;
 
-    if (widget.naviPath != null && widget.naviPath!.points.isNotEmpty) {
-      int currentIndex =
-      widget.naviPath!.points.indexOf(_currentDisplayedUserLocation!);
-      if (currentIndex != -1 &&
-          currentIndex < widget.naviPath!.points.length - 1) {
+    if (widget.naviPath != null && widget.naviPath!.points.isNotEmpty && preservedRotation == null) {
+      int currentIndex = widget.naviPath!.points.indexOf(_currentUserNode!.coord);
+      if (currentIndex != -1 && currentIndex < widget.naviPath!.points.length - 1) {
         final Offset segmentStart = widget.naviPath!.points[currentIndex];
         final Offset segmentEnd = widget.naviPath!.points[currentIndex + 1];
         final Offset segmentVector = Offset(
@@ -294,37 +318,34 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
           segmentEnd.dy - segmentStart.dy,
         );
         if (segmentVector.dx.abs() > 1e-6 || segmentVector.dy.abs() > 1e-6) {
-          final double segmentAngle =
-          math.atan2(segmentVector.dy, segmentVector.dx);
+          final double segmentAngle = math.atan2(segmentVector.dy, segmentVector.dx);
           final double calculatedRotation = (-math.pi / 2) - segmentAngle;
 
-          // Check if significant rotation is needed (more than 15 degrees)
-          final double rotationDiff = (_rotation -
-              _shortestAngleTweenEnd(_rotation, calculatedRotation))
-              .abs();
-          if (rotationDiff > (math.pi / 12)) {
-            // 15 degrees threshold
-            _pendingRotation = calculatedRotation;
-            _isAtJunction = true;
-            _showNextButton = true;
-            shouldRotate = false; // Don't rotate automatically
-          } else {
-            targetRotation = calculatedRotation;
-            shouldRotate = true;
+
+          // Only calculate new rotation if we're not preserving rotation from floor transition
+          if (preservedRotation == null) {
+            // Check if significant rotation is needed (more than 15 degrees)
+            final double rotationDiff = (_rotation - _shortestAngleTweenEnd(_rotation, calculatedRotation)).abs();
+            if (rotationDiff > (math.pi / 12)) {
+              _pendingRotation = calculatedRotation;
+              _isAtJunction = true;
+              _showNextButton = true;
+              shouldRotate = false;
+            } else {
+              targetRotation = calculatedRotation;
+              shouldRotate = true;
+            }
           }
         }
       }
     }
 
-    final double targetScale =
-    _animationTargetScale.clamp(_minScale, _maxScale);
+    final double targetScale = _animationTargetScale.clamp(_minScale, _maxScale);
 
-    final double rotatedScaledX =
-        _currentDisplayedUserLocation!.dx * math.cos(targetRotation) -
-            _currentDisplayedUserLocation!.dy * math.sin(targetRotation);
-    final double rotatedScaledY =
-        _currentDisplayedUserLocation!.dx * math.sin(targetRotation) +
-            _currentDisplayedUserLocation!.dy * math.cos(targetRotation);
+    final double rotatedScaledX = _currentUserNode!.coord.dx * math.cos(targetRotation) -
+        _currentUserNode!.coord.dy * math.sin(targetRotation);
+    final double rotatedScaledY = _currentUserNode!.coord.dx * math.sin(targetRotation) +
+        _currentUserNode!.coord.dy * math.cos(targetRotation);
 
     final Offset transformedPivotAtOrigin = Offset(
       rotatedScaledX * targetScale,
@@ -336,21 +357,22 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
       screenCenterY - transformedPivotAtOrigin.dy,
     );
 
+
     // Only animate if we should rotate or if it's just centering
     if (shouldRotate || !_isAtJunction) {
       _triggerMapAnimation(
         targetOffset: newMapOffset,
         targetScale: targetScale,
         targetRotation: targetRotation,
-        pivotPointSvg: _currentDisplayedUserLocation!,
+        pivotPointSvg: _currentUserNode!.coord,
       );
     } else {
       // Just center without rotation
       _triggerMapAnimation(
         targetOffset: newMapOffset,
         targetScale: targetScale,
-        targetRotation: _rotation, // Keep current rotation
-        pivotPointSvg: _currentDisplayedUserLocation!,
+        targetRotation: targetRotation, // Use the preserved rotation
+        pivotPointSvg: _currentUserNode!.coord,
       );
     }
   }
@@ -378,6 +400,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
     required double targetRotation,
     Offset? pivotPointSvg,
   }) {
+
     if (_mapAnimationController.isAnimating) {
       _mapAnimationController.stop();
     }
@@ -388,7 +411,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
       end: targetOffset,
     ).animate(CurvedAnimation(
         parent: _mapAnimationController,
-        curve: Curves.easeInOutCubic)); // Smoother curve
+        curve: Curves.easeInOutCubic));
     _scaleAnimation = Tween<double>(
       begin: _scale,
       end: targetScale,
@@ -463,26 +486,33 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
 
 
   /// Programmatically change the floor and trigger transition animation
-  void changeFloor(String floorName) {
+  void changeFloor(int floorId) {
     if (!mounted) return;
 
+
     // Check if the floor actually exists
-    final floorExists = widget.floors.any((floor) => floor.name == floorName);
+    final floorExists = widget.floors.any((floor) => floor.floorId == floorId);
     if (!floorExists) {
-      print('Floor $floorName not found in available floors');
       return;
     }
 
     // Only proceed if it's a different floor
-    if (floorName != widget.currentFloor) {
+    if (floorId != widget.currentFloor.floorId) {
+      // Store the current rotation and scale before transition
+      final double preservedRotation = _rotation;
+      final double preservedScale = _scale;
+
       setState(() {
-        _previousFloor = widget.currentFloor;
+        _previousFloorId = widget.currentFloor.floorId;
         _isTransitioning = true;
+        // Immediately set the rotation to preserve it
+        _rotation = preservedRotation;
       });
+
 
       // Call the floor change callback after a short delay to allow animation to start
       Future.delayed(const Duration(milliseconds: 100), () {
-        widget.onFloorChanged?.call(floorName);
+        widget.onFloorChanged?.call(floorId);
       });
 
       // Reset transition state after animation completes
@@ -490,16 +520,19 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
         if (mounted) {
           setState(() {
             _isTransitioning = false;
-            _previousFloor = null;
+            _previousFloorId = null;
+            // Ensure rotation is preserved
+            _rotation = preservedRotation;
+            _scale = preservedScale;
           });
         }
       });
 
       // If user location exists, center the map after floor change
       Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted && _currentDisplayedUserLocation != null &&
-            _shouldCenterOnUser()) {
-          _centerMapOnUserLocation();
+        if (mounted && _currentUserNode != null && _shouldCenterOnUser()) {
+          // Pass the preserved rotation to maintain consistency
+          _centerMapOnUserLocation(preservedRotation: preservedRotation);
         }
       });
     }
@@ -507,7 +540,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
 
   /// Get the current floor name (useful for external access)
   String getCurrentFloor() {
-    return widget.currentFloor;
+    return widget.currentFloor.name;
   }
 
   /// Check if a floor transition is currently in progress
@@ -521,19 +554,19 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
       builder: (context) =>
           Dialog(
             child: FloorNavigation(
-              floors: widget.floors.map((floor) => floor.name).toList(),
-              currentFloor: widget.currentFloor,
-              onFloorSelected: (floor) {
+              floors: widget.floors.map((floor) => floor).toList(),
+              currentFloorId: widget.currentFloor.floorId,
+              onFloorSelected: (floorId) {
                 Navigator.pop(context);
-                if (floor != widget.currentFloor) {
+                if (floorId != widget.currentFloor.floorId) {
                   setState(() {
-                    _previousFloor = widget.currentFloor;
+                    _previousFloorId = widget.currentFloor.floorId;
                     _isTransitioning = true;
                   });
 
                   // Call the callback after a short delay to allow animation to start
                   Future.delayed(const Duration(milliseconds: 100), () {
-                    widget.onFloorChanged?.call(floor);
+                    widget.onFloorChanged?.call(floorId);
                   });
 
                   // Reset transition state after animation completes
@@ -541,7 +574,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                     if (mounted) {
                       setState(() {
                         _isTransitioning = false;
-                        _previousFloor = null;
+                        _previousFloorId = null;
                       });
                     }
                   });
@@ -562,11 +595,6 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
         }
         final svgSize = snapshot.data!;
 
-        // Find current floor data
-        final currentFloorData = widget.floors.firstWhere(
-              (floor) => floor.name == widget.currentFloor,
-          orElse: () => widget.floors.first,
-        );
 
         return Stack(
           children: [
@@ -644,7 +672,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                 Future.delayed(Duration(milliseconds: _reTrackingDelayMs), () {
                   if (mounted &&
                       _shouldCenterOnUser() &&
-                      _currentDisplayedUserLocation != null) {
+                      _currentUserNode != null) {
                     _centerMapOnUserLocation();
                   }
                 });
@@ -665,7 +693,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                     width: svgSize.width,
                     height: svgSize.height,
                     child: FloorTransition(
-                      svgPath: currentFloorData.svgPath,
+                      svgPath: widget.currentFloor.svgPath,
                       isTransitioning: _isTransitioning,
                       child: Stack(
                         clipBehavior: Clip.none,
@@ -673,17 +701,18 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                           SvgPicture.asset(
 
                             clipBehavior: Clip.none,
-                            currentFloorData.svgPath,
+                            widget.currentFloor.svgPath,
                             fit: BoxFit.none,
                             alignment: Alignment.topLeft,
                           ),
                           if (widget.naviPath != null &&
-                              widget.naviPath!.points.isNotEmpty)
+                              widget.naviPath!.points.isNotEmpty &&
+                              widget.naviPath!.floorId == widget.currentFloor.floorId)
                             CustomPaint(
                               painter: PathPainter(naviPath: widget.naviPath!),
                               size: svgSize,
                             ),
-                          // Map Nodes (display before other markers so they appear behind)
+
                           if (_isShowLocationPin) ...[
                             ...widget.venueNodes.map((venue) =>
                                 MapMarker(
@@ -705,29 +734,29 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                                 mapRotation: _rotation,
                                 floorId: 1, // Default to ground floor for transition points
                               )),
-                          if (widget.source != null)
+                          if (widget.source != null && (widget.source!.floorId == widget.currentFloor.floorId))
                             MapMarker(
                               position: widget.source!.coord,
-                              color: Colors.blueAccent,
+                              color: Colors.redAccent,
                               radius: 15.0,
                               mapRotation: _rotation,
                               floorId: 1, // Default to ground floor for source
                             ),
-                          if (widget.des != null)
+                          if (widget.des != null&& (widget.des!.floorId == widget.currentFloor.floorId))
                             MapMarker(
                               position: widget.des!.coord,
-                              color: Colors.blueAccent,
+                              color: Colors.redAccent,
                               radius: 10.0,
                               mapRotation: _rotation,
                               floorId: 1, // Default to ground floor for destination
                             ),
-                          if (_currentDisplayedUserLocation != null)
+                          if (_currentUserNode != null && (_currentUserNode!.floorId == widget.currentFloor.floorId))
                             MapMarker(
-                              position: _currentDisplayedUserLocation!,
-                              color: Colors.red,
+                              position: _currentUserNode!.coord,
+                              color: Colors.blue,
                               radius: 12.0,
                               mapRotation: _rotation,
-                              floorId: 1, // Default to ground floor for user location
+                              floorId: _currentUserNode!.floorId,
                             ),
                         ],
                       ),
@@ -740,16 +769,16 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
 
             NavigationButtonGroup(
               onCenterPressed: () {
-                if (_currentDisplayedUserLocation != null) {
+                if (_currentUserNode != null) {
                   _centerMapOnUserLocation();
                 }
               },
               onNavigationPressed: widget.onNavigationPressed ?? () {},
               onChangeFloorButtonPressed: _showFloorNavigation,
 
-              isCenterEnabled: _currentDisplayedUserLocation != null,
-              isNavigationEnabled: !_isAnimating,
-              isLoading: widget.isLoading,
+              isCenterEnabled: _currentUserNode != null && (_currentUserNode?.floorId == widget.currentFloor.floorId),
+              isNavigationEnabled: !_isAnimating && (_currentUserNode?.floorId == widget.currentFloor.floorId),
+                isLoading: widget.isLoading,
               onShowLocationPinPressed: () {
                 setState(() {
                   _isShowLocationPin = !_isShowLocationPin;
@@ -757,7 +786,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
               },
               showLocationPin: _isShowLocationPin,
 
-              isNavigatingStatus: (_currentDisplayedUserLocation != null),
+              isNavigatingStatus: (widget.isStepByStep) && (_currentUserNode != null) ,
 
             ),
 

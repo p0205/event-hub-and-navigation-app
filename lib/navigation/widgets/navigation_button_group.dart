@@ -28,7 +28,7 @@ class NavigationButtonGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       right: 16,
-      bottom: 8,
+      bottom: 16,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -87,8 +87,8 @@ class CenterLocationButton extends StatelessWidget {
     return FloatingActionButton(
       heroTag: 'centerLocation',
       onPressed: isEnabled ? onPressed : null,
-      backgroundColor: isEnabled ? Theme.of(context).primaryColor : Colors.grey,
-      foregroundColor: Colors.white,
+      backgroundColor: isEnabled ?  Color.fromARGB(255, 245, 197, 66) : Colors.grey,
+      foregroundColor: Colors.black,
       child: const Icon(Icons.my_location),
     );
   }
@@ -116,8 +116,8 @@ class _TogglePinVisibilityButtonState extends State<TogglePinVisibilityButton> {
     return FloatingActionButton(
       heroTag: 'toggleVisibility',
       onPressed: widget.onPressed,
-      backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
+      backgroundColor:  Color.fromARGB(255, 245, 197, 66),
+      foregroundColor: Colors.black,
       child: Icon(
         widget.showLocationPin ? Icons.visibility : Icons.visibility_off,
       ),
@@ -142,13 +142,12 @@ class NavigationButton extends StatelessWidget {
     return FloatingActionButton(
       heroTag: 'navigation',
       onPressed: isEnabled ? onPressed : null,
-      backgroundColor: isLoading
-          ? Colors.grey.withOpacity(0.5)
-          : Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
+      backgroundColor: isLoading||isEnabled
+          ?  Color.fromARGB(255, 245, 197, 66) : Colors.grey,
+      foregroundColor: Colors.black,
       child: Icon(
         Icons.arrow_forward,
-        color: (isLoading || !isEnabled) ? Colors.grey : Colors.white,
+        // color: (isLoading || !isEnabled) ? Colors.grey : Colors.white,
       ),
     );
   }
@@ -168,8 +167,8 @@ class ChangeFloorButton extends StatelessWidget {
     return FloatingActionButton(
       heroTag: 'change_floor',
 
-      backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
+      backgroundColor:  Color.fromARGB(255, 245, 197, 66),
+      foregroundColor: Colors.black,
       onPressed: onPressed,
       child: Icon(
         Icons.layers,
