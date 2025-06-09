@@ -9,8 +9,7 @@ import 'package:provider/provider.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../common_widget/navigation_provider.dart';
 import '../bloc/event_bloc.dart';
-import '../../feedback/bloc/feedback_bloc.dart'; // Add this import
-import '../../navigation/screens/navigation_screen.dart';
+import '../../feedback/bloc/feedback_bloc.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final int eventId;
@@ -49,11 +48,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             userId: _currentUserId!,
           ));
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to view your events.')),
-        );
-      }
+      } 
+      
     });
   }
 
@@ -277,9 +273,32 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     ),
                     TextButton.icon(
                       onPressed: () {
-                        context.read<NavigationBloc>().add(ShowVenueSelectionDialogEvent(destination: venue.name));
-                        navigationProvider.setPage(2);
-                        Navigator.pop(context);
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Navigate to Venue'),
+                              content: Text('Do you want to navigate to ${venue.name}?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // Close the dialog
+                                    context.read<NavigationBloc>().add(ShowVenueSelectionDialogEvent(destination: venue.name));
+                                    navigationProvider.setPage(2);
+                                    Navigator.pop(context); // Close the event details page
+                                  },
+                                  child: const Text('Navigate'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       },
                       icon: const Icon(Icons.directions),
                       label: const Text('Get Directions'),

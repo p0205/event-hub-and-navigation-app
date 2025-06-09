@@ -11,8 +11,6 @@ import '../../my_events/screens/event_details_page.dart'; // Ensure this points 
 // import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // This might not be needed anymore, remove if unused
 
 class HomePage extends StatefulWidget {
-
-
   const HomePage({super.key});
 
   @override
@@ -47,15 +45,7 @@ class _HomePageState extends State<HomePage> {
 
         // Now dispatch the event to HomeBloc with the fetched userId
         _homeBloc.add(FetchCalendarEvents(_currentUserId!));
-      } else {
-        // Handle the case where the user is not authenticated.
-        // This usually means navigating them back to the login screen,
-        // or showing an error message.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You are not logged in. Please log in.')),
-        );
-        // Example: Navigator.of(context).pushReplacementNamed('/login');
-      }
+      } 
     });
 
     // Initialize _selectedDay to _focusedDay so that events for today are shown by default
@@ -87,21 +77,20 @@ class _HomePageState extends State<HomePage> {
     // after setState.
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc,AuthState>(
-      builder: (context,state) {
-        if(state is UnAuthenticatedState) {
-          return const LoginReminderWidget();
-        }
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Home'),
-
-            automaticallyImplyLeading: false,
-          ),
-          body: BlocConsumer<HomeBloc, HomeState>(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home'),
+        automaticallyImplyLeading: false,
+      ),
+      body: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is UnAuthenticatedState) {
+            return const LoginReminderWidget();
+          }
+          
+          return BlocConsumer<HomeBloc, HomeState>(
             bloc: _homeBloc,
             listener: (context, state) {
               if (state is CalendarEventLoaded) {
@@ -138,7 +127,6 @@ class _HomePageState extends State<HomePage> {
               }
             },
             builder: (context, state) {
-
               return Column(
                 children: [
                   Padding(
@@ -207,59 +195,57 @@ class _HomePageState extends State<HomePage> {
                 ],
               );
             },
-          ),
-          // bottomNavigationBar: BottomNavigationBar(
-          //   type: BottomNavigationBarType.fixed,
-          //   currentIndex: 0,
-          //   onTap: (index) {
-          //     switch (index) {
-          //       case 0:
-          //         break;
-          //       case 1:
-          //         Navigator.push(
-          //           context,
-          //           MaterialPageRoute(
-          //               builder: (context) => MyEventsPage()),
-          //
-          //         );
-          //         break;
-          //       case 2:
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           const SnackBar(content: Text('Navigate to Notifications Page')),
-          //         );
-          //         break;
-          //       case 3:
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           const SnackBar(
-          //               content: Text('Navigate to Profile/Settings Page')),
-          //         );
-          //         break;
-          //     }
-          //   },
-          //   items: const [
-          //     BottomNavigationBarItem(
-          //       icon: Icon(Icons.home),
-          //       label: 'Home',
-          //     ),
-          //     BottomNavigationBarItem(
-          //       icon: Icon(Icons.event),
-          //       label: 'My Events',
-          //     ),
-          //     BottomNavigationBarItem(
-          //       icon: Icon(Icons.notifications),
-          //       label: 'Notifications',
-          //     ),
-          //     BottomNavigationBarItem(
-          //       icon: Icon(Icons.person),
-          //       label: 'Profile',
-          //     ),
-          //   ],
-          // ),
-        );
-      }
+          );
+        },
+      ),
+      // bottomNavigationBar: BottomNavigationBar(
+      //   type: BottomNavigationBarType.fixed,
+      //   currentIndex: 0,
+      //   onTap: (index) {
+      //     switch (index) {
+      //       case 0:
+      //         break;
+      //       case 1:
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(
+      //               builder: (context) => MyEventsPage()),
+      //
+      //         );
+      //         break;
+      //       case 2:
+      //         ScaffoldMessenger.of(context).showSnackBar(
+      //           const SnackBar(content: Text('Navigate to Notifications Page')),
+      //         );
+      //         break;
+      //       case 3:
+      //         ScaffoldMessenger.of(context).showSnackBar(
+      //           const SnackBar(
+      //               content: Text('Navigate to Profile/Settings Page')),
+      //         );
+      //         break;
+      //     }
+      //   },
+      //   items: const [
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.home),
+      //       label: 'Home',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.event),
+      //       label: 'My Events',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.notifications),
+      //       label: 'Notifications',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.person),
+      //       label: 'Profile',
+      //     ),
+      //   ],
+      // ),
     );
-
-
   }
 
   Widget eventCalendar (){

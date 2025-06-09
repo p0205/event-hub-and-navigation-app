@@ -539,7 +539,8 @@ Future<void> _showNavigationOptions()  async {
         },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Indoor Navigation'),
+          title: Text('FTMK Map'),
+           automaticallyImplyLeading: false,
         ),
         body: Stack(
           children: [

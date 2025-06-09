@@ -6,6 +6,7 @@ import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart'; // To ge
 import 'package:event_hub_and_navigation_app/models/event.dart'; // Adjust path
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 
+import '../../widgets/login_reminder_widget.dart';
 import 'event_details_page.dart'; // For date formatting
 
 class MyEventsPage extends StatefulWidget {
@@ -64,12 +65,7 @@ class _MyEventsPageState extends State<MyEventsPage>
             const SnackBar(content: Text('User ID not found.')),
           );
         }
-      } else {
-        // Handle unauthenticated state (e.g., navigate to login)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to view your events.')),
-        );
-        // Navigator.of(context).pushReplacementNamed('/login'); // Example
+      
       }
     });
   }
@@ -86,6 +82,7 @@ class _MyEventsPageState extends State<MyEventsPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Events'),
+         automaticallyImplyLeading: false,
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
@@ -95,45 +92,53 @@ class _MyEventsPageState extends State<MyEventsPage>
           ],
         ),
       ),
-      body: BlocListener<EventBloc, EventState>(
-          bloc: _myEventsBloc,
-          listener: (context, state) {
+      body: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is UnAuthenticatedState) {
+            return const LoginReminderWidget();
+          }
 
-            if (state is EventErrorState) {
-              _isLoading = false;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
-            } else if (state is EventLoadingState) {
-              _isLoading = true;
-            } else if (state is EventLoadedState) {
-              if (_activeTab == "Upcoming") {
-                _upcomingEvents = state.event;
-              } else if (_activeTab == "Past") {
-                print("set _pastEvent");
-                _pastEvents = state.event;
-                print("_pastEvents $_pastEvents");
+          return BlocListener<EventBloc, EventState>(
+            bloc: _myEventsBloc,
+            listener: (context, state) {
+              if (state is EventErrorState) {
+                _isLoading = false;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              } else if (state is EventLoadingState) {
+                _isLoading = true;
+              } else if (state is EventLoadedState) {
+                if (_activeTab == "Upcoming") {
+                  _upcomingEvents = state.event;
+                } else if (_activeTab == "Past") {
+                  print("set _pastEvent");
+                  _pastEvents = state.event;
+                  print("_pastEvents $_pastEvents");
+                }
+                _isLoading = false;
+                setState(() {});
               }
-              _isLoading = false;
-              setState(() {});
-            }
-          },
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _isLoading || _upcomingEvents == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildEventList(_upcomingEvents ?? [], 'Upcoming'),
-              _isLoading || _pastEvents == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildEventList(_pastEvents ?? [], 'Past'),
-            ],
-          )),
+            },
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _isLoading || _upcomingEvents == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildEventList(_upcomingEvents ?? [], 'Upcoming'),
+                _isLoading || _pastEvents == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildEventList(_pastEvents ?? [], 'Past'),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildEventList(List<Event> events, String type) {
-    bool shouldShowFeedbackBtn = (type == 'Past' ) ? true :false;
+    bool shouldShowFeedbackBtn = (type == 'Past') ? true : false;
     if (events.isEmpty) {
       return Center(
         child: Text(
@@ -147,7 +152,10 @@ class _MyEventsPageState extends State<MyEventsPage>
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        return EventCard(event: event, shouldShowFeedbackBtn: shouldShowFeedbackBtn); // Use a reusable EventCard widget
+        return EventCard(
+            event: event,
+            shouldShowFeedbackBtn:
+                shouldShowFeedbackBtn); // Use a reusable EventCard widget
       },
     );
   }
@@ -158,7 +166,8 @@ class EventCard extends StatelessWidget {
   final Event event;
   final bool shouldShowFeedbackBtn;
 
-  const EventCard({super.key, required this.event, required this.shouldShowFeedbackBtn});
+  const EventCard(
+      {super.key, required this.event, required this.shouldShowFeedbackBtn});
 
   @override
   Widget build(BuildContext context) {
@@ -178,12 +187,14 @@ class EventCard extends StatelessWidget {
       child: InkWell(
         // Use InkWell for tap effect
         onTap: () {
-
           // Navigate to EventDetailsPage when card is tapped
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EventDetailsPage(eventId : event.id , shouldShowFeedbackBtn: shouldShowFeedbackBtn,),
+              builder: (context) => EventDetailsPage(
+                eventId: event.id,
+                shouldShowFeedbackBtn: shouldShowFeedbackBtn,
+              ),
             ),
           );
         },

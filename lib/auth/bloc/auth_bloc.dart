@@ -56,7 +56,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onSignOutRequested(SignOutRequested event, Emitter<AuthState> emit) async {
-    await authRepository.signOut();
-    emit(AuthInitialState());
+    try {
+      // Clear all stored data
+      await _storageService.deleteToken();
+      await _storageService.deleteUser();
+      await authRepository.signOut();
+      
+      // Emit unauthenticated state
+      emit(UnAuthenticatedState());
+    } catch (e) {
+      // Even if there's an error, we want to sign the user out
+      emit(UnAuthenticatedState());
+    }
   }
 }

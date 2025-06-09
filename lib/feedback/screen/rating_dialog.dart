@@ -39,13 +39,9 @@ class _EventRatingPageState extends State<EventRatingPage> {
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthenticatedState) {
         _currentUserId = authState.user.id;
-      } else {
-        // Handle unauthenticated state (e.g., navigate to login)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to view your events.')),
-        );
+      } 
         // Navigator.of(context).pushReplacementNamed('/login'); // Example
-      }
+      
     });
   }
 

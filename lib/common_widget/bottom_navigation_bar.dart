@@ -1,6 +1,7 @@
 
 
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
+import 'package:event_hub_and_navigation_app/profile/screens/profile_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +18,7 @@ import 'navigation_provider.dart';
   const HomePage(),
   const MyEventsPage(),
   NavigationScreen(),
-  // const ProfilePage(),
+  const ProfileScreen(),
   ];
 
   @override

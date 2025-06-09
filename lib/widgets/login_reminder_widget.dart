@@ -66,7 +66,7 @@ class LoginReminderWidget extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Login Now',
+                'Sign In Now',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

@@ -29,7 +29,11 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign In')),
+      appBar: AppBar(
+        title: const Text('Sign In'),
+        automaticallyImplyLeading: false,
+        ),
+      
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           print("Listener in sign in screen, Current state: $state");

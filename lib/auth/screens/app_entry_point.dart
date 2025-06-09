@@ -3,8 +3,6 @@ import 'package:event_hub_and_navigation_app/common_widget/bottom_navigation_bar
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart';
-import 'package:event_hub_and_navigation_app/auth/screens/sign_in_screen.dart';
-import 'package:event_hub_and_navigation_app/home/screens/home_page.dart';
 
 // Your AuthBloc events and states are assumed to be correctly defined elsewhere.
 // e.g., auth_bloc.dart, auth_event.dart, auth_state.dart
@@ -16,10 +14,12 @@ class AppEntryPoint extends StatefulWidget {
   State<AppEntryPoint> createState() => _AppEntryPointState();
 }
 
-class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProviderStateMixin {
+class _AppEntryPointState extends State<AppEntryPoint>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
-  bool _splashScreenFinished = false; // Flag to track if splash screen duration is over
+  bool _splashScreenFinished =
+      false; // Flag to track if splash screen duration is over
 
   @override
   void initState() {
@@ -28,7 +28,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
     // Initialize AnimationController for fading effect
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Duration of the fade animation
+      duration:
+          const Duration(milliseconds: 1500), // Duration of the fade animation
     );
 
     // Define a fade animation (e.g., from transparent to opaque)
@@ -44,7 +45,7 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
 
     // Set a timer for the total splash screen duration (3 seconds)
     Timer(const Duration(seconds: 3), () {
-      print("MOUNTED: $mounted" );
+      print("MOUNTED: $mounted");
       if (mounted) {
         setState(() {
           _splashScreenFinished = true; // Mark splash screen as finished
@@ -64,7 +65,6 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    
     // return MainWrapper();
     // The BlocBuilder listens to AuthBloc state changes.
     // However, we only allow it to render HomePage or SignInScreen
@@ -79,11 +79,12 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
         // _splashScreenFinished is true, as those are handled by the top-level
         // listener in main.dart (as per previous discussions).
         return _splashScreenFinished &&
-            (currentState is AuthenticatedState || currentState is UnAuthenticatedState ||  currentState is AuthInitialState);
+            (currentState is AuthenticatedState ||
+                currentState is UnAuthenticatedState ||
+                currentState is AuthInitialState);
       },
       builder: (context, state) {
-        
-        if (state is AuthInitialState){
+        if (state is AuthInitialState) {
           return Scaffold(
             backgroundColor: Colors.yellow.shade200, // Light yellow background
             body: FadeTransition(
@@ -97,7 +98,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: Colors.yellow.shade900, // Darker yellow for contrast
+                        color: Colors
+                            .yellow.shade900, // Darker yellow for contrast
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -109,8 +111,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
               ),
             ),
           );
-        }else{
- return  MainWrapper();
+        } else {
+          return MainWrapper();
         }
         // // Once the splash screen duration is over (_splashScreenFinished is true),
         // // then render based on the actual AuthBloc state.
