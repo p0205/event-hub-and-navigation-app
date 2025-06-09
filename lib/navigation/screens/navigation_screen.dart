@@ -1,6 +1,8 @@
 // lib/screens/navigation_screen
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../bloc/navigation_bloc.dart';
 import '../models/floor_data.dart';
 import '../models/nav_path.dart';
 import '../models/nav_segment.dart';
@@ -11,11 +13,13 @@ import '../services/navigation_service.dart';
 import '../services/turn_instruction_service.dart';
 import '../widgets/map_marker.dart';
 import '../widgets/navigation_options_menu.dart';
+import '../widgets/venue_selection_dialog.dart';
 import 'interactive_svg_map.dart';
 
 class NavigationScreen extends StatefulWidget {
 
-  const NavigationScreen({super.key});
+  String? destination;
+   NavigationScreen({super.key, this.destination});
 
   @override
   State<NavigationScreen> createState() => _NavigationScreenState();
@@ -46,7 +50,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Node? _userNode;
   List<MapMarker> venueNodes = [];
   List<MapMarker> stairNodes = [];
-  List<String> _allVenuesName = [];
+  // List<String> _allVenuesName = [];
   List<FloorData> _floors = [];
   bool _isStepByStep = true;
 
@@ -77,6 +81,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
       FloorData(name: 'Ground Floor', svgPath: 'assets/floorplan/ftmk_gf.svg', floorId: 1),
 
     ];
+
+    if (mounted) {
+      context.read<NavigationBloc>().add(LoadAllVenuesNameEvent());
+    }
+
+    // Set destination if provided
+    if (widget.destination != null) {
+      setState(() {
+        _selectedDestination = widget.destination;
+      });
+    }
   }
 
   Future<void> _loadVenueNodes() async {
@@ -84,7 +99,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     setState(() {
       venueNodes = nodes["venues"] as List<MapMarker>;
       stairNodes = nodes["stairs"] as List<MapMarker>;
-      _allVenuesName = nodes["allVenuesName"] as List<String>;
+      // _allVenuesName = nodes["allVenuesName"] as List<String>;
     });
   }
 
@@ -165,6 +180,40 @@ class _NavigationScreenState extends State<NavigationScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showVenueSelectionDialog(bool isSource) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocBuilder<NavigationBloc, NavigationState>(
+        builder: (context, state) {
+          if (state is AllVenuesLoadedState) {
+            return VenueSelectionDialog(
+              venues: state.allVenuesName!,
+              title: isSource ? 'Select Source' : 'Select Destination',
+              onVenueSelected: (venueName) {
+                setState(() {
+
+                  if (isSource) {
+                    print("Venue selection dialog venueName: ${venueName}");
+                    _selectedSource = venueName;
+                    print("Venue selection dialog _selectedSource: ${_selectedSource}");
+                  } else {
+                    _selectedDestination = venueName;
+
+                  }
+
+                });
+              },
+            );
+          }else{
+            context.read<NavigationBloc>().add(LoadAllVenuesNameEvent());
+          }
+          return const CircularProgressIndicator();
+
+        },
+      ),
+    );
   }
 
   void _resetNavigationState() {
@@ -479,171 +528,193 @@ Future<void> _showNavigationOptions()  async {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Indoor Navigation'),
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: InteractiveSvgMap(
-              key: _interactiveMapKey,
-              isStepByStep: _isStepByStep,
-              naviPath: _getCurrentNavPath(),
-              source: _sourceNode,
-              des: _desNode,
-              userNode: _userNode,
-              userLocation: _userNode?.coord,
-              currentPathPointIndex: _currentPathPointIndex,
-              venueNodes: venueNodes,
-              stairNodes: stairNodes,
-              transitionPoints: _getCurrentFloorTransitions(),
-              onNavigationPressed: _handleNextNavigationStep,
-              isNavigationEnabled: _getCurrentNavPath() != null && !_isNavigationCompleted,
-              isLoading: _isLoading,
-              floors: _floors,
-              onFloorChanged: _handleFloorChange,
+    return BlocListener<NavigationBloc, NavigationState>(
+        bloc: BlocProvider.of<NavigationBloc>(context),
+        listener: (context, state) {
 
-              currentFloor: getCurrentFloorData(_currentFloorId),
+          if(state is SelectSourceDialogShownState){
+            setState(() {
+              _selectedDestination  = state.destination;
+            });
+            _showVenueSelectionDialog(true);
+          }
+        },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Indoor Navigation'),
+        ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveSvgMap(
+                key: _interactiveMapKey,
+                isStepByStep: _isStepByStep,
+                naviPath: _getCurrentNavPath(),
+                source: _sourceNode,
+                des: _desNode,
+                userNode: _userNode,
+                userLocation: _userNode?.coord,
+                currentPathPointIndex: _currentPathPointIndex,
+                venueNodes: venueNodes,
+                stairNodes: stairNodes,
+                transitionPoints: _getCurrentFloorTransitions(),
+                onNavigationPressed: _handleNextNavigationStep,
+                isNavigationEnabled: _getCurrentNavPath() != null && !_isNavigationCompleted,
+                isLoading: _isLoading,
+                floors: _floors,
+                onFloorChanged: _handleFloorChange,
 
-            ),
-          ),
-          Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedSource,
-                        hint: const Text("Source"),
-                        items: _allVenuesName.map((venueName) {
-                          return DropdownMenuItem(
-                            value:venueName,
-                            child: Text(venueName),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedSource = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedDestination,
-                        hint: const Text("Destination"),
-                        items: _allVenuesName.map((venueName) {
-                          return DropdownMenuItem(
-                            value: venueName,
-                            child: Text(venueName),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedDestination = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_selectedSource != null && _selectedDestination != null) {
-                          await _showNavigationOptions();
-                          // await _getNavigationPath(_selectedSource!, _selectedDestination!);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : const Text('Find Path'),
-                    ),
-                  ],
-                ),
+                currentFloor: getCurrentFloorData(_currentFloorId),
+
               ),
-              Container(
-                padding: const EdgeInsets.all(12.0),
-                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple,
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _currentFloorId == 1 ? "Ground Floor" : 'Level $_currentFloorId',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
+            ),
+            Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-
-
-                    if(_currentFloorId == _userNode?.floorId && _isStepByStep)
-                    Row(
-                      children: [
-                        if (_instructionsByFloor.containsKey(_currentFloorId) && 
-                            _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
-                            _currentInstruction.icon != null)
-                          SizedBox(
-                            width: 50,
-                            child:
-                              _currentInstruction.icon,
-
-                          ),
-                        Expanded(
-                          child: Center(
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _showVenueSelectionDialog(true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 8.0,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
                             child: Text(
-                              _instructionsByFloor.containsKey(_currentFloorId) ? _currentInstruction.instruction : "No instructions for this floor",
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
+                              _selectedSource ?? "Select Source",
+                              style: TextStyle(
+                                color: _selectedSource == null ? Colors.grey : Colors.black,
+                              ),
                             ),
                           ),
                         ),
-                        // Add an empty SizedBox with the same width as the icon to maintain symmetry
-                        if (_instructionsByFloor.containsKey(_currentFloorId) && 
-                            _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
-                            _currentInstruction.icon != null)
-                          const SizedBox(width: 50),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _showVenueSelectionDialog(false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 8.0,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: Text(
+                              _selectedDestination ?? "Select Destination",
+                              style: TextStyle(
+                                color: _selectedDestination == null ? Colors.grey : Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_selectedSource != null && _selectedDestination != null) {
+                            await _showNavigationOptions();
+                            // await _getNavigationPath(_selectedSource!, _selectedDestination!);
+                          }else{
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('You have reached your destination')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator()
+                            : const Text('Find Path'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.circular(10.0),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        _currentFloorId == 1 ? "Ground Floor" : 'Level $_currentFloorId',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+
+                      if(_currentFloorId == _userNode?.floorId && _isStepByStep)
+                      Row(
+                        children: [
+                          if (_instructionsByFloor.containsKey(_currentFloorId) &&
+                              _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
+                              _currentInstruction.icon != null)
+                            SizedBox(
+                              width: 50,
+                              child:
+                                _currentInstruction.icon,
+
+                            ),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                _instructionsByFloor.containsKey(_currentFloorId) ? _currentInstruction.instruction : "No instructions for this floor",
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          // Add an empty SizedBox with the same width as the icon to maintain symmetry
+                          if (_instructionsByFloor.containsKey(_currentFloorId) &&
+                              _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
+                              _currentInstruction.icon != null)
+                            const SizedBox(width: 50),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

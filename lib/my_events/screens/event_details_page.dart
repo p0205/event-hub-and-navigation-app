@@ -1,12 +1,16 @@
 // Updated EventDetailsPage with feedback check
 import 'package:event_hub_and_navigation_app/feedback/screen/rating_dialog.dart';
+import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:event_hub_and_navigation_app/models/session.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import '../../auth/bloc/auth_bloc.dart';
+import '../../common_widget/navigation_provider.dart';
 import '../bloc/event_bloc.dart';
 import '../../feedback/bloc/feedback_bloc.dart'; // Add this import
+import '../../navigation/screens/navigation_screen.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final int eventId;
@@ -234,7 +238,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   Widget _buildSessionCard(BuildContext context, Session session) {
     String sessionTimeString =
         '${DateHelper.formatDate(session.startDateTime)} - ${DateHelper.formatDate(session.endDateTime)}';
-
+    final navigationProvider = Provider.of<NavigationProvider>(context);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       elevation: 2,
@@ -273,12 +277,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     ),
                     TextButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Getting directions to ${venue.name} (Node: ${venue.nodeId})'),
-                          ),
-                        );
+                        context.read<NavigationBloc>().add(ShowVenueSelectionDialogEvent(destination: venue.name));
+                        navigationProvider.setPage(2);
+                        Navigator.pop(context);
                       },
                       icon: const Icon(Icons.directions),
                       label: const Text('Get Directions'),

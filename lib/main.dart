@@ -6,12 +6,15 @@ import 'package:event_hub_and_navigation_app/auth/screens/app_entry_point.dart';
 import 'package:event_hub_and_navigation_app/feedback/bloc/feedback_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/my_events/bloc/event_bloc.dart';
+import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import 'auth/bloc/auth_bloc.dart';
+import 'common_widget/navigation_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +40,7 @@ Future<void> main() async {
 
   runApp(
 
-    MultiBlocProvider(
+    MultiProvider(
         providers: [
           BlocProvider<AuthBloc>(
             create: (context) => AuthBloc(),
@@ -50,6 +53,13 @@ Future<void> main() async {
           ),
           BlocProvider<FeedbackBloc>(
               create: (context) => FeedbackBloc()
+          ),
+          BlocProvider<NavigationBloc>(
+              create: (context) => NavigationBloc()
+          ),
+          ChangeNotifierProvider(
+            create: (context) => NavigationProvider(),
+            child: const MyApp(),
           ),
           // Add other BLoCs here
         ],

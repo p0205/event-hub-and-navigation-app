@@ -1,5 +1,4 @@
 // lib/services/navigation_api.dart
-
 import '../models/find_path_response.dart';
 import 'navigation_data_provider.dart';
 
@@ -17,5 +16,10 @@ class NavigationRepo {
   static Future<Map<String, dynamic>> getVenueNodes(int currentFloorId) async {
 
     return await NavigationDataProvider.getVenueNodes(currentFloorId);
+  }
+
+  static Future<Map<int, List<String>>> getAllVenuesName() async {
+
+    return await NavigationDataProvider.getAllVenuesName();
   }
 }

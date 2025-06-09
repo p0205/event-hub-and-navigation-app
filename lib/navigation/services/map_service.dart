@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../repo/navigation_repo.dart';
+import '../widgets/map_marker.dart';
 
 class MapService {
 
@@ -17,6 +19,10 @@ class MapService {
   }
   static Future<Map<String, dynamic>> loadVenueNodes(int currentFloorId) async {
     return await NavigationRepo.getVenueNodes(currentFloorId);
+  }
+
+  static Future<Map<int, List<String>>> getAllVenuesName() async {
+    return await NavigationRepo.getAllVenuesName();
   }
 
   

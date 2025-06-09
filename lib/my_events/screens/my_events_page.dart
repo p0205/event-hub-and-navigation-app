@@ -98,8 +98,7 @@ class _MyEventsPageState extends State<MyEventsPage>
       body: BlocListener<EventBloc, EventState>(
           bloc: _myEventsBloc,
           listener: (context, state) {
-            print("Enter listener....");
-            print("Current state: $state");
+
             if (state is EventErrorState) {
               _isLoading = false;
               ScaffoldMessenger.of(context).showSnackBar(

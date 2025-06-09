@@ -84,7 +84,7 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
         // always show the animated splash screen content.
         if (state is AuthenticatedState) {
           print("state is AuthenticatedState");
-          return const MainWrapper();
+          return  MainWrapper();
         } else if(state is UnAuthenticatedState) {
           // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
           // or any other state that's not AuthenticatedState after splash.

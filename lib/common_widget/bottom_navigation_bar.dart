@@ -1,46 +1,35 @@
 
 
-import 'package:event_hub_and_navigation_app/my_events/screens/event_details_page.dart';
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../home/screens/home_page.dart';
 import '../navigation/screens/navigation_screen.dart';
+import 'navigation_provider.dart';
 
-class MainWrapper extends StatefulWidget {
-  const MainWrapper({super.key});
 
-  @override
-  State<MainWrapper> createState() => _MainWrapperState();
-}
+  class MainWrapper extends StatelessWidget {
+   MainWrapper({super.key});
 
-class _MainWrapperState extends State<MainWrapper> {
-  int _selectedIndex = 0; // State to track the selected tab index
-
-  // List of your main pages
   final List<Widget> _pages = [
-    const HomePage(),
-    const MyEventsPage(),
-    const NavigationScreen(),
-    // const ProfilePage(),
+  const HomePage(),
+  const MyEventsPage(),
+  NavigationScreen(),
+  // const ProfilePage(),
   ];
 
-  // Callback for when a tab is tapped
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
   @override
   Widget build(BuildContext context) {
     // Define your theme color (dark gold/orange)
-    final Color themeColor = Colors.amber[700]!; // Example using a darker amber
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+    final Color themeColor = Colors.amber[700]!;
 
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex, // Shows the page at the selected index
-        children: _pages, // The list of pages
+        index: navigationProvider.selectedIndex,
+        children: _pages,
       ),
       bottomNavigationBar: Container( // No Padding wrapper needed for this effect
         decoration: BoxDecoration(
@@ -56,8 +45,8 @@ class _MainWrapperState extends State<MainWrapper> {
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed, // Ensures labels are visible
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped, // Call the method to update selected index
+          currentIndex: navigationProvider.selectedIndex,
+          onTap: (index) => navigationProvider.setPage(index),
           backgroundColor: Colors.transparent, // Make it transparent so the Container's color shows
           elevation: 0, // Remove default shadow of BottomNavigationBar
 

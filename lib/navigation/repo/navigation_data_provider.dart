@@ -10,17 +10,41 @@ import '../widgets/map_marker.dart';
 class NavigationDataProvider {
   // Cache for all venues and stairs
   static Map<String, List<MapMarker>>? _cachedVenues;
-  static List<String> _allVenuesName = [];
+  static final Map<int,List<String>> _allVenuesName = {};
 
   static bool _isInitialized = false;
 
   NavigationDataProvider({http.Client? httpClient});
 
+  static Future<Map<int, List<String>>> getAllVenuesName() async {
+    if (!_isInitialized) {
+      await _initializeVenues();
+    }
+
+
+    _allVenuesName.clear();
+
+    // Group venues by floorId
+    for (final venue in _cachedVenues!['venues']!) {
+      // Check if a label exists to avoid adding nulls
+      if (venue.label != null) {
+        // If the floorId key doesn't exist, create it with a new list.
+        // Then, add the venue label to the list for that floorId.
+        (_allVenuesName[venue.floorId] ??= []).add(venue.label!);
+      }
+    }
+
+    return _allVenuesName;
+  }
+
   static Future<Map<String,dynamic>> getVenueNodes(int currentFloorId) async {
     // If not initialized, fetch all venues first
     if (!_isInitialized) {
       await _initializeVenues();
+
     }
+
+
 
 
 
@@ -38,7 +62,7 @@ class NavigationDataProvider {
     return {
       'venues': filteredVenues,
       'stairs': filteredStairs,
-      'allVenuesName' : _allVenuesName
+
     };
   }
 
@@ -58,9 +82,6 @@ class NavigationDataProvider {
             .map((venueJson) => MapMarker.fromJson(venueJson as Map<String, dynamic>))
             .toList();
 
-        for(MapMarker venue in venues){
-          _allVenuesName.add(venue.label!);
-        }
 
         final List<MapMarker> stairs = stairsJson
             .map((stairJson) => MapMarker.fromJson(stairJson as Map<String, dynamic>))
