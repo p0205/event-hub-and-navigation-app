@@ -21,30 +21,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onAuthCheckRequested(AppStarted event, Emitter<AuthState> emit) async {
 
-    print("On App Started in bloc");
     final token = await _storageService.getToken();
     final user = await _storageService.getUser();
 
     if (token != null && token.isNotEmpty && user != null) {
-      print(" token != null && token.isNotEmpty && user != null");
       // AWAIT the validation and use its boolean result
       final isValidToken = await authRepository.validateToken();
-      print("isValidToken : $isValidToken ");
       if (isValidToken) {
         // Only set the token if it's valid. The ApiService interceptor already adds it,
         // but if you have a global default, you might want to set it here.
         // ApiService.setAuthToken(token); // This line is typically handled by Dio interceptor
         emit(AuthenticatedState(user: user));
-        print("     emit(AuthenticatedState(user: user));");
       } else {
         await _storageService.deleteToken(); // Clear expired token
         await _storageService.deleteUser(); // Clear associated user data
         emit(UnAuthenticatedState());
-        print(" emit(UnAuthenticatedState());");
       }
 
     } else {
-      print("else token != null && token.isNotEmpty && user != null ");
       emit(UnAuthenticatedState());
     }
   }

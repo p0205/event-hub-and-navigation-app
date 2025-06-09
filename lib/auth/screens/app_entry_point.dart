@@ -64,6 +64,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    
+    // return MainWrapper();
     // The BlocBuilder listens to AuthBloc state changes.
     // However, we only allow it to render HomePage or SignInScreen
     // *after* the fixed splash screen duration has passed.
@@ -80,18 +82,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
             (currentState is AuthenticatedState || currentState is UnAuthenticatedState ||  currentState is AuthInitialState);
       },
       builder: (context, state) {
-        // If the splash screen duration is not over yet,
-        // always show the animated splash screen content.
-        if (state is AuthenticatedState) {
-          print("state is AuthenticatedState");
-          return  MainWrapper();
-        } else if(state is UnAuthenticatedState) {
-          // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
-          // or any other state that's not AuthenticatedState after splash.
-
-          return const SignInScreen();
-        }
-        else{
+        
+        if (state is AuthInitialState){
           return Scaffold(
             backgroundColor: Colors.yellow.shade200, // Light yellow background
             body: FadeTransition(
@@ -117,6 +109,8 @@ class _AppEntryPointState extends State<AppEntryPoint> with SingleTickerProvider
               ),
             ),
           );
+        }else{
+ return  MainWrapper();
         }
         // // Once the splash screen duration is over (_splashScreenFinished is true),
         // // then render based on the actual AuthBloc state.

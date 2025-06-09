@@ -38,11 +38,10 @@ class MapMarker extends StatelessWidget {
     final int floorId = json['floor_id'] as int;
     
     // Debug print to see the full JSON
-    print('MapMarker JSON data: $json');
-    
+
     // Get the venue_image directly from the root of the JSON
     final String? image = json['venue_image'] as String?;
-    print('Extracted image URL: $image'); // Debug print
+    // Debug print
 
     return MapMarker(
       position: Offset(x, y),
@@ -240,7 +239,7 @@ class MapMarker extends StatelessWidget {
     // print("MapMarker - Label: $label"); // Debug log
 
     if (imageUrl == null || imageUrl!.isEmpty) {
-      print("MapMarker - No image URL available"); // Debug log
+      // Debug log
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -257,7 +256,7 @@ class MapMarker extends StatelessWidget {
       return;
     }
 
-    print("MapMarker - Showing image viewer with URL: $imageUrl"); // Debug log
+    // Debug log
     showDialog(
       context: context,
       builder: (context) => VenueImageViewer(

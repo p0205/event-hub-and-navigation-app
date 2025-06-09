@@ -195,9 +195,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 setState(() {
 
                   if (isSource) {
-                    print("Venue selection dialog venueName: ${venueName}");
                     _selectedSource = venueName;
-                    print("Venue selection dialog _selectedSource: ${_selectedSource}");
                   } else {
                     _selectedDestination = venueName;
 
