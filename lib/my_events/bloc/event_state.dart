@@ -29,6 +29,24 @@ final class EventLoadedState extends EventState {
   List<Object> get props => [event];
 }
 
+final class CalenderEventLoadedState extends EventState {
+  final List<CalendarEvent> events;
+
+  const CalenderEventLoadedState(this.events);
+
+  @override
+  List<Object> get props => [events];
+}
+
+final class CalendarEventErrorState extends EventState {
+  final String message;
+
+  const CalendarEventErrorState(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
 
 final class EventDetailsInitialState extends EventState {}
 

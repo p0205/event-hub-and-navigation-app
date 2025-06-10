@@ -1,5 +1,6 @@
 
 
+import 'package:event_hub_and_navigation_app/my_events/screens/my_events_calender_view_page.dart';
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
 import 'package:event_hub_and_navigation_app/profile/screens/profile_screen.dart';
 
@@ -16,7 +17,7 @@ import 'navigation_provider.dart';
 
   final List<Widget> _pages = [
   const HomePage(),
-  const MyEventsPage(),
+  const MyEventsCalenderViewPage(),
   NavigationScreen(),
   const ProfileScreen(),
   ];
@@ -59,7 +60,7 @@ import 'navigation_provider.dart';
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
-              label: 'Home',
+              label: 'All Events',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.event),

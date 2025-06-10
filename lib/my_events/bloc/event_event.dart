@@ -31,6 +31,19 @@ final class FetchMyPastEvents extends EventEvent {
 
 
 
+class FetchMyCalendarEventsByMonth extends EventEvent {
+  final int userId;
+  final DateTime startDateTime;
+  final DateTime endDateTime;
+
+  const FetchMyCalendarEventsByMonth({required this.userId,required this.startDateTime,required this.endDateTime});
+
+  @override
+  List<Object> get props => [userId];
+}
+
+
+
 final class FetchEventDetails extends EventEvent {
  final int eventId;
 

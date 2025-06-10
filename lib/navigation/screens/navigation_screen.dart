@@ -534,6 +534,7 @@ Future<void> _showNavigationOptions()  async {
             setState(() {
               _selectedDestination  = state.destination;
             });
+            print("Thisi is from BlocListener");
             _showVenueSelectionDialog(true);
           }
         },
@@ -586,7 +587,11 @@ Future<void> _showNavigationOptions()  async {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () => _showVenueSelectionDialog(true),
+
+                          onTap: () {
+                            
+                            _showVenueSelectionDialog(true);
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12.0,
@@ -631,11 +636,20 @@ Future<void> _showNavigationOptions()  async {
                       ElevatedButton(
                         onPressed: () async {
                           if (_selectedSource != null && _selectedDestination != null) {
-                            await _showNavigationOptions();
+                            if(_selectedSource == _selectedDestination){
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please select different source and destination')),
+                              );
+                            }else{
+                              await _showNavigationOptions();
+                            }
+
                             // await _getNavigationPath(_selectedSource!, _selectedDestination!);
-                          }else{
+                          }
+                          else{
+
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('You have reached your destination')),
+                              const SnackBar(content: Text('Source and Destination cannot be empty')),
                             );
                           }
                         },

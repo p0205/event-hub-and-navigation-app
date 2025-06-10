@@ -12,6 +12,6 @@ class NavPath {
     required this.floorId,
     required this.points,
     this.color = Colors.blue,
-    this.width = 3.0,
+    this.width = 5.0,
   });
 }

@@ -31,6 +31,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
 
     print(event.destination);
       emit(SelectSourceDialogShownState(destination: event.destination));
-
+ // Immediately emit initial state to clear the event
+    emit(NavigationInitial());
   }
 }

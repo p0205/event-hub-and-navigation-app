@@ -42,7 +42,7 @@ class NavigationResponse {
       points: allPoints,
       floorId:  floorId,
       color: color ?? Colors.blue,
-      width: width ?? 3.0,
+      width: width ?? 5.0,
     );
   }
 

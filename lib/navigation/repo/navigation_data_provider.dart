@@ -67,7 +67,6 @@ class NavigationDataProvider {
   }
 
   static Future<void> _initializeVenues() async {
-    print("Initializing venues data");
     final url = Uri.parse('${AppConstants.BaseUrl}${AppConstants.NaviPort}/venues');
     
     try {
@@ -97,7 +96,6 @@ class NavigationDataProvider {
         throw Exception(error['error'] ?? 'Failed to load venues');
       }
     } catch (e) {
-      print("error: ${e.toString()}");
       throw Exception('Failed to connect to server: $e');
     }
   }
@@ -106,9 +104,7 @@ class NavigationDataProvider {
     required String source,
     required String destination,
   }) async {
-    print("data provider: getNavigationPath");
     final url = Uri.parse('${AppConstants.BaseUrl+AppConstants.NaviPort}/find_path');
-    print(url);
     try {
       final response = await http.post(
         url,

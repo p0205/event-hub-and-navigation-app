@@ -54,11 +54,8 @@ class _MyEventsPageState extends State<MyEventsPage>
       if (authState is AuthenticatedState) {
         _currentUserId = authState.user.id;
         if (_currentUserId != null) {
-          print("initally   Fetch coming event....");
-          print("Loading $_isLoading");
           _myEventsBloc.add(FetchMyUpcomingEvents(userId: _currentUserId!));
 
-          print("Loading $_isLoading");
         } else {
           // Handle case where userId is null despite AuthenticatedState
           ScaffoldMessenger.of(context).showSnackBar(
@@ -112,9 +109,7 @@ class _MyEventsPageState extends State<MyEventsPage>
                 if (_activeTab == "Upcoming") {
                   _upcomingEvents = state.event;
                 } else if (_activeTab == "Past") {
-                  print("set _pastEvent");
                   _pastEvents = state.event;
-                  print("_pastEvents $_pastEvents");
                 }
                 _isLoading = false;
                 setState(() {});

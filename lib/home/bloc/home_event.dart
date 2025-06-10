@@ -16,3 +16,15 @@ class FetchCalendarEvents extends HomeEvent {
   @override
   List<Object> get props => [userId];
 }
+
+class FetchCalendarEventsByMonth extends HomeEvent {
+  final int userId;
+  final DateTime startDateTime;
+  final DateTime endDateTime;
+
+  const FetchCalendarEventsByMonth({required this.userId,required this.startDateTime,required this.endDateTime});
+
+  @override
+  List<Object> get props => [userId];
+}
+

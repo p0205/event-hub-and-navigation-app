@@ -67,6 +67,42 @@ class EventRepository {
     }
   }
 
+  Future<List<CalendarEvent>> fetchMyCalendarEventsByMonth(int userId, DateTime startDateTime, DateTime endDateTime) async {
+    try {
+      print('DEBUG: Requesting calendar events with params:');
+      print('DEBUG: userId: $userId');
+      print('DEBUG: startDateTime: ${startDateTime.toIso8601String()}');
+      print('DEBUG: endDateTime: ${endDateTime.toIso8601String()}');
+      
+      final response = await ApiService.get(
+          '/events/participant/calendar-events',  
+          queryParameters: {
+            'userId': userId, 
+            'startDateTime': startDateTime.toIso8601String(), 
+            'endDateTime': endDateTime.toIso8601String()
+          }
+      );
+      
+      print('DEBUG: Response status code: ${response.statusCode}');
+      print('DEBUG: Response data: ${response.data}');
+      
+      if (response.statusCode == HttpStatus.ok) {
+        List<dynamic> eventJsonList = response.data;
+        return eventJsonList
+            .map((json) => CalendarEvent.fromJson(json))
+            .toList();
+
+      } else {
+        throw Exception(
+            'Failed to load upcoming events: ${response.statusCode}');
+      }
+    }  catch (e) {
+      // Catch any other exceptions
+      print('UNEXPECTED_ERROR_DEBUG: $e');
+      rethrow; // Re-throw the exception
+    }
+  }
+
   Future<List<Event>> fetchMyPastEvents(int userId) async {
     try {
       final response = await ApiService.get(
@@ -84,6 +120,7 @@ class EventRepository {
       rethrow; // Re-throw the exception
     }
   }
+
 
   Future<Event> fetchEventDetails(int eventId) async {
     try {
