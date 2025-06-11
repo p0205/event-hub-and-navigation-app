@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:event_hub_and_navigation_app/navigation/widgets/map_marker.dart';
 import 'package:meta/meta.dart';
 
 import '../services/map_service.dart';

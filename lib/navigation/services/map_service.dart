@@ -21,7 +21,7 @@ class MapService {
     return await NavigationRepo.getVenueNodes(currentFloorId);
   }
 
-  static Future<Map<int, List<String>>> getAllVenuesName() async {
+  static Future<Map<int, List<MapMarker>>> getAllVenuesName() async {
     return await NavigationRepo.getAllVenuesName();
   }
 

@@ -1,4 +1,6 @@
 // lib/services/navigation_api.dart
+import 'package:event_hub_and_navigation_app/navigation/widgets/map_marker.dart';
+
 import '../models/find_path_response.dart';
 import 'navigation_data_provider.dart';
 
@@ -18,7 +20,7 @@ class NavigationRepo {
     return await NavigationDataProvider.getVenueNodes(currentFloorId);
   }
 
-  static Future<Map<int, List<String>>> getAllVenuesName() async {
+  static Future<Map<int, List<MapMarker>>> getAllVenuesName() async {
 
     return await NavigationDataProvider.getAllVenuesName();
   }

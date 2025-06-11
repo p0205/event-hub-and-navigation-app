@@ -1,9 +1,10 @@
+import 'package:event_hub_and_navigation_app/navigation/widgets/map_marker.dart';
 import 'package:flutter/material.dart';
 
 class VenueSelectionDialog extends StatefulWidget {
-  final Map<int, List<String>> venues;
+  final Map<int, List<MapMarker>> venues;
   final String title;
-  final Function(String) onVenueSelected;
+  final Function(MapMarker) onVenueSelected;
 
   const VenueSelectionDialog({
     super.key,
@@ -19,7 +20,7 @@ class VenueSelectionDialog extends StatefulWidget {
 class _VenueSelectionDialogState extends State<VenueSelectionDialog> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  Map<int, List<String>> _filteredVenues = {};
+  Map<int, List<MapMarker>> _filteredVenues = {};
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _VenueSelectionDialogState extends State<VenueSelectionDialog> {
         _filteredVenues = {};
         widget.venues.forEach((floorId, venues) {
           final matchingVenues = venues
-              .where((venue) => venue.toLowerCase().contains(query))
+              .where((venue) => venue.label!.toLowerCase().contains(query))
               .toList();
           if (matchingVenues.isNotEmpty) {
             _filteredVenues[floorId] = matchingVenues;
@@ -155,7 +156,7 @@ class _VenueSelectionDialogState extends State<VenueSelectionDialog> {
                               leading: Icon(Icons.location_on, 
                                 color: Theme.of(context).primaryColor.withOpacity(0.7)
                               ),
-                              title: Text(venue),
+                              title: Text(venue.label!),
                               onTap: () {
                                 widget.onVenueSelected(venue);
                                 Navigator.pop(context);

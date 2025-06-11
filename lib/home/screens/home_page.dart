@@ -9,7 +9,6 @@ import 'package:event_hub_and_navigation_app/common_widgets/calendar.dart';
 
 import '../../auth/bloc/auth_bloc.dart';
 import '../../event_details/screen/event_details_page.dart'; // Ensure this points to calendar_event_model.dart if that's the name
-// import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // This might not be needed anymore, remove if unused
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -87,24 +86,20 @@ class _HomePageState extends State<HomePage> {
 
   // Helper method to calculate and dispatch the event
   void _fetchEventsForFocusedMonth() {
-    print("DEBUG: _fetchEventsForFocusedMonth called with focusedDay: $_focusedDay");
 
 
     // Check if we have cached events for this month
     if (_hasCachedEvents(_focusedDay)) {
-      print("DEBUG: Using cached events for month: ${_getCacheKey(_focusedDay)}");
       _updateEventsFromCache(_focusedDay);
       return;
     }
 
     // Calculate the start of the _focusedDay's month
     DateTime startOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    print("DEBUG: startOfMonth: $startOfMonth");
 
     // Calculate the end of the _focusedDay's month
     DateTime endOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0)
         .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999));
-    print("DEBUG: endOfMonth: $endOfMonth");
 
     // Dispatch the event with the calculated date range
     _homeBloc.add(
@@ -184,7 +179,6 @@ class _HomePageState extends State<HomePage> {
                       calendarFormat: _calendarFormat,
                       onDaySelected: _onDaySelected,
                       onPageChanged: (focusedDay) {
-                        print('DEBUG: Calendar page changed to: $focusedDay');
                         setState(() {
                           _focusedDay = focusedDay;
                         });
@@ -221,7 +215,6 @@ class _HomePageState extends State<HomePage> {
                                         itemCount: _getEventsForDay(_selectedDay!).length,
                                     itemBuilder: (context, index) {
                                           final event = _getEventsForDay(_selectedDay!)[index];
-                                          print(event.venueNames);
                                       return InkWell(
                                         onTap: () {
                                           Navigator.push(

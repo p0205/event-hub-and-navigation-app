@@ -17,9 +17,9 @@ import '../widgets/venue_selection_dialog.dart';
 import 'interactive_svg_map.dart';
 
 class NavigationScreen extends StatefulWidget {
-
   String? destination;
-   NavigationScreen({super.key, this.destination});
+
+  NavigationScreen({super.key, this.destination});
 
   @override
   State<NavigationScreen> createState() => _NavigationScreenState();
@@ -50,12 +50,13 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Node? _userNode;
   List<MapMarker> venueNodes = [];
   List<MapMarker> stairNodes = [];
+
   // List<String> _allVenuesName = [];
   List<FloorData> _floors = [];
   bool _isStepByStep = true;
 
   // Navigation flow state
-  Map<int,List<TurnInstruction>> _instructionsByFloor = {};
+  Map<int, List<TurnInstruction>> _instructionsByFloor = {};
   late TurnInstruction _currentInstruction;
   int _currentPathPointIndex = 0;
   bool _isPendingRotation = false;
@@ -75,11 +76,22 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
 
     _floors = [
-      FloorData(name: 'Level 4', svgPath: 'assets/floorplan/ftmk_level4.svg', floorId: 4),
-      FloorData(name: 'Level 3', svgPath: 'assets/floorplan/ftmk_level3.svg', floorId: 3),
-      FloorData(name: 'Level 2', svgPath: 'assets/floorplan/ftmk_level2.svg', floorId: 2),
-      FloorData(name: 'Ground Floor', svgPath: 'assets/floorplan/ftmk_gf.svg', floorId: 1),
-
+      FloorData(
+          name: 'Level 4',
+          svgPath: 'assets/floorplan/ftmk_level4.svg',
+          floorId: 4),
+      FloorData(
+          name: 'Level 3',
+          svgPath: 'assets/floorplan/ftmk_level3.svg',
+          floorId: 3),
+      FloorData(
+          name: 'Level 2',
+          svgPath: 'assets/floorplan/ftmk_level2.svg',
+          floorId: 2),
+      FloorData(
+          name: 'Ground Floor',
+          svgPath: 'assets/floorplan/ftmk_gf.svg',
+          floorId: 1),
     ];
 
     if (mounted) {
@@ -110,22 +122,23 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _resetNavigationState();
     });
 
-
     try {
-      final result = await NavigationService.getNavigationPath(source, destination);
+      final result =
+          await NavigationService.getNavigationPath(source, destination);
 
       // Generate instructions first
-      final instructionsByFloor = TurnInstructionService.generateTurnInstructions(
-          result['simplifiedSegments'], result['desNode']);
-
-
+      final instructionsByFloor =
+          TurnInstructionService.generateTurnInstructions(
+              result['simplifiedSegments'], result['desNode']);
 
       // Switch to the source's floor if it's different from current floor
       // print(_currentFloorId);
       // print()
-      if (result['sourceNode'] != null && result['sourceNode'].floorId != _currentFloorId) {
+      if (result['sourceNode'] != null &&
+          result['sourceNode'].floorId != _currentFloorId) {
         // First update the floor
-        _interactiveMapKey.currentState?.changeFloor(result['sourceNode'].floorId);
+        _interactiveMapKey.currentState
+            ?.changeFloor(result['sourceNode'].floorId);
         // Wait for floor transition animation
         // Optional: Add a delay before continuing navigation
         await Future.delayed(const Duration(milliseconds: 800), () {
@@ -162,8 +175,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
         if (_userNode != null) {
           _interactiveMapKey.currentState?.goToPointOnPath(
             _userNode!.coord,
-            alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
-                _getCurrentNavPath()!.points.length > 1 ? 0 : null,
+            alignMapToPathSegmentIndex:
+                _getCurrentNavPath()?.points.length != null &&
+                        _getCurrentNavPath()!.points.length > 1
+                    ? 0
+                    : null,
           );
         }
       });
@@ -191,24 +207,57 @@ class _NavigationScreenState extends State<NavigationScreen> {
             return VenueSelectionDialog(
               venues: state.allVenuesName!,
               title: isSource ? 'Select Source' : 'Select Destination',
-              onVenueSelected: (venueName) {
+              onVenueSelected: (venue) {
                 setState(() {
-
                   if (isSource) {
-                    _selectedSource = venueName;
+                    _selectedSource = venue.label;
+
+                    // Update current floor if needed
+                    if (_currentFloorId != venue.floorId) {
+                      setState(() {
+                        _currentFloorId = venue.floorId;
+                        _loadVenueNodes();
+                      });
+
+                      //
+                      // // Find the venue marker that matches the selected source
+                      // final venueMarker = venueNodes.firstWhere(
+                      //   (marker) => marker.label == venue.label,
+                      //   orElse: () => stairNodes.firstWhere(
+                      //     (marker) => marker.label == venue.label,
+                      //     orElse: () => throw Exception('Venue not found'),
+                      //   ),
+                      // );
+                    }
+
+                    setState(() {
+                      // Create a source node with the venue's coordinates
+                      _sourceNode = Node(
+                        floorId: venue.floorId,
+                        nodeId: -1,
+                        name: venue.label!,
+                        coord: venue.position,
+                      );
+                    });
+                    if (mounted) {
+                      // Center the map on the source point
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _interactiveMapKey.currentState?.goToPointOnPath(
+                          venue.position,
+                          alignMapToPathSegmentIndex: null,
+                        );
+                      });
+                    }
                   } else {
-                    _selectedDestination = venueName;
-
+                    _selectedDestination = venue.label;
                   }
-
                 });
               },
             );
-          }else{
+          } else {
             context.read<NavigationBloc>().add(LoadAllVenuesNameEvent());
           }
           return const CircularProgressIndicator();
-
         },
       ),
     );
@@ -244,7 +293,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void _handleFloorChange(int floorId) {
     // Map floor names to floor IDs (adjust based on your floor naming)
 
-
     setState(() {
       _currentFloorId = floorId;
     });
@@ -256,18 +304,21 @@ class _NavigationScreenState extends State<NavigationScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _interactiveMapKey.currentState?.goToPointOnPath(
             _userNode!.coord,
-            alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
-                _getCurrentNavPath()!.points.length > 1 ? 0 : null,
+            alignMapToPathSegmentIndex:
+                _getCurrentNavPath()?.points.length != null &&
+                        _getCurrentNavPath()!.points.length > 1
+                    ? 0
+                    : null,
           );
         });
       }
     });
   }
 
-  FloorData getCurrentFloorData(int currentFloorId){
+  FloorData getCurrentFloorData(int currentFloorId) {
     // Find current floor data
-    return  _floors.firstWhere(
-          (floor) => floor.floorId == currentFloorId,
+    return _floors.firstWhere(
+      (floor) => floor.floorId == currentFloorId,
       orElse: () => _floors.first,
     );
   }
@@ -275,7 +326,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Future<void> _handleNextNavigationStep() async {
     NavPath? currentPath = _getCurrentNavPath();
 
-    if (currentPath == null || currentPath.points.isEmpty || _isNavigationCompleted) {
+    if (currentPath == null ||
+        currentPath.points.isEmpty ||
+        _isNavigationCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You have reached your destination')),
       );
@@ -288,7 +341,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
       // Check if user is near a transition point
       for (Offset transitionPoint in transitions) {
         if (_userNode != null &&
-            (_userNode!.coord - transitionPoint).distance < _destinationReachedThreshold) {
+            (_userNode!.coord - transitionPoint).distance <
+                _destinationReachedThreshold) {
           // Handle floor transition immediately
           await _handleFloorTransition();
           // After floor transition, continue with navigation on the new floor
@@ -300,7 +354,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
         }
       }
     }
-
 
     if (mounted) {
       _handleSingleLevelNavigation(currentPath!);
@@ -317,7 +370,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
     for (var segment in _simplifiedSegments) {
       if (segment.segmentType == "inter_floor_transition" &&
           segment.startFloodId == _currentFloorId) {
-
         // // Store the current floor ID before transition
         // final int previousFloorId = _currentFloorId;
         final int newFloorId = segment.endFloorId;
@@ -347,7 +399,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
           setState(() {
             // Update navigation state for the new floor
             if (_instructionsByFloor.containsKey(newFloorId)) {
-              List<TurnInstruction> instructions = _instructionsByFloor[newFloorId]!;
+              List<TurnInstruction> instructions =
+                  _instructionsByFloor[newFloorId]!;
               if (instructions.isNotEmpty) {
                 _currentInstruction = instructions[0];
               }
@@ -374,8 +427,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
             if (_userNode != null) {
               _interactiveMapKey.currentState?.goToPointOnPath(
                 _userNode!.coord,
-                alignMapToPathSegmentIndex: _getCurrentNavPath()?.points.length != null &&
-                    _getCurrentNavPath()!.points.length > 1 ? 0 : null,
+                alignMapToPathSegmentIndex:
+                    _getCurrentNavPath()?.points.length != null &&
+                            _getCurrentNavPath()!.points.length > 1
+                        ? 0
+                        : null,
               );
             }
           });
@@ -391,8 +447,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
       setState(() {
         _isPendingRotation = false;
 
-        List<TurnInstruction> instruction = TurnInstructionService.findInstructionForLocation(
-            _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
+        List<TurnInstruction> instruction =
+            TurnInstructionService.findInstructionForLocation(
+                _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
 
         if (instruction.length > 1) {
           _currentInstruction = instruction[1];
@@ -464,8 +521,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
       if (_currentPathPointIndex < currentPath.points.length - 1) {
         List<TurnInstruction> upcomingTurnInstruction =
-        TurnInstructionService.findInstructionForLocation(
-            _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
+            TurnInstructionService.findInstructionForLocation(
+                _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
         isUpcomingTurn = true;
         if (upcomingTurnInstruction.isNotEmpty) {
           nextInstructionText = upcomingTurnInstruction[0].instruction;
@@ -501,13 +558,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
   }
 
-
-Future<void> _showNavigationOptions()  async {
-  showDialog(
-    context: context,
-    builder: (context) => NavigationOptionsMenu(
-      onNavigationOptionSelected: (isStepByStep) async {
-        if (isStepByStep) {
+  Future<void> _showNavigationOptions() async {
+    showDialog(
+      context: context,
+      builder: (context) => NavigationOptionsMenu(
+        onNavigationOptionSelected: (isStepByStep) async {
+          if (isStepByStep) {
             setState(() {
               _isStepByStep = true;
             });
@@ -518,30 +574,28 @@ Future<void> _showNavigationOptions()  async {
             });
           }
           await _getNavigationPath(_selectedSource!, _selectedDestination!);
-        
-      },
-    ),
-  );
-}
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<NavigationBloc, NavigationState>(
-        bloc: BlocProvider.of<NavigationBloc>(context),
-        listener: (context, state) {
-
-          if(state is SelectSourceDialogShownState){
-            setState(() {
-              _selectedDestination  = state.destination;
-            });
-            print("Thisi is from BlocListener");
-            _showVenueSelectionDialog(true);
-          }
-        },
+      bloc: BlocProvider.of<NavigationBloc>(context),
+      listener: (context, state) {
+        if (state is SelectSourceDialogShownState) {
+          setState(() {
+            _selectedDestination = state.destination;
+          });
+          print("Thisi is from BlocListener");
+          _showVenueSelectionDialog(true);
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text('FTMK Map'),
-           automaticallyImplyLeading: false,
+          automaticallyImplyLeading: false,
         ),
         body: Stack(
           children: [
@@ -559,13 +613,12 @@ Future<void> _showNavigationOptions()  async {
                 stairNodes: stairNodes,
                 transitionPoints: _getCurrentFloorTransitions(),
                 onNavigationPressed: _handleNextNavigationStep,
-                isNavigationEnabled: _getCurrentNavPath() != null && !_isNavigationCompleted,
+                isNavigationEnabled:
+                    _getCurrentNavPath() != null && !_isNavigationCompleted,
                 isLoading: _isLoading,
                 floors: _floors,
                 onFloorChanged: _handleFloorChange,
-
                 currentFloor: getCurrentFloorData(_currentFloorId),
-
               ),
             ),
             Column(
@@ -587,9 +640,7 @@ Future<void> _showNavigationOptions()  async {
                     children: [
                       Expanded(
                         child: InkWell(
-
                           onTap: () {
-                            
                             _showVenueSelectionDialog(true);
                           },
                           child: Container(
@@ -604,7 +655,9 @@ Future<void> _showNavigationOptions()  async {
                             child: Text(
                               _selectedSource ?? "Select Source",
                               style: TextStyle(
-                                color: _selectedSource == null ? Colors.grey : Colors.black,
+                                color: _selectedSource == null
+                                    ? Colors.grey
+                                    : Colors.black,
                               ),
                             ),
                           ),
@@ -626,7 +679,9 @@ Future<void> _showNavigationOptions()  async {
                             child: Text(
                               _selectedDestination ?? "Select Destination",
                               style: TextStyle(
-                                color: _selectedDestination == null ? Colors.grey : Colors.black,
+                                color: _selectedDestination == null
+                                    ? Colors.grey
+                                    : Colors.black,
                               ),
                             ),
                           ),
@@ -635,21 +690,24 @@ Future<void> _showNavigationOptions()  async {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
-                          if (_selectedSource != null && _selectedDestination != null) {
-                            if(_selectedSource == _selectedDestination){
+                          if (_selectedSource != null &&
+                              _selectedDestination != null) {
+                            if (_selectedSource == _selectedDestination) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please select different source and destination')),
+                                const SnackBar(
+                                    content: Text(
+                                        'Please select different source and destination')),
                               );
-                            }else{
+                            } else {
                               await _showNavigationOptions();
                             }
 
                             // await _getNavigationPath(_selectedSource!, _selectedDestination!);
-                          }
-                          else{
-
+                          } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Source and Destination cannot be empty')),
+                              const SnackBar(
+                                  content: Text(
+                                      'Source and Destination cannot be empty')),
                             );
                           }
                         },
@@ -665,7 +723,8 @@ Future<void> _showNavigationOptions()  async {
                 ),
                 Container(
                   padding: const EdgeInsets.all(12.0),
-                  margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 4.0),
                   decoration: BoxDecoration(
                     color: Colors.deepPurple,
                     borderRadius: BorderRadius.circular(10.0),
@@ -680,7 +739,9 @@ Future<void> _showNavigationOptions()  async {
                   child: Column(
                     children: [
                       Text(
-                        _currentFloorId == 1 ? "Ground Floor" : 'Level $_currentFloorId',
+                        _currentFloorId == 1
+                            ? "Ground Floor"
+                            : 'Level $_currentFloorId',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -688,39 +749,43 @@ Future<void> _showNavigationOptions()  async {
                         ),
                       ),
                       const SizedBox(height: 4),
-
-
-                      if(_currentFloorId == _userNode?.floorId && _isStepByStep)
-                      Row(
-                        children: [
-                          if (_instructionsByFloor.containsKey(_currentFloorId) &&
-                              _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
-                              _currentInstruction.icon != null)
-                            SizedBox(
-                              width: 50,
-                              child:
-                                _currentInstruction.icon,
-
-                            ),
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                _instructionsByFloor.containsKey(_currentFloorId) ? _currentInstruction.instruction : "No instructions for this floor",
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
+                      if (_currentFloorId == _userNode?.floorId &&
+                          _isStepByStep)
+                        Row(
+                          children: [
+                            if (_instructionsByFloor
+                                    .containsKey(_currentFloorId) &&
+                                _instructionsByFloor[_currentFloorId]!
+                                    .isNotEmpty &&
+                                _currentInstruction.icon != null)
+                              SizedBox(
+                                width: 50,
+                                child: _currentInstruction.icon,
+                              ),
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  _instructionsByFloor
+                                          .containsKey(_currentFloorId)
+                                      ? _currentInstruction.instruction
+                                      : "No instructions for this floor",
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             ),
-                          ),
-                          // Add an empty SizedBox with the same width as the icon to maintain symmetry
-                          if (_instructionsByFloor.containsKey(_currentFloorId) &&
-                              _instructionsByFloor[_currentFloorId]!.isNotEmpty &&
-                              _currentInstruction.icon != null)
-                            const SizedBox(width: 50),
-                        ],
-                      ),
+                            // Add an empty SizedBox with the same width as the icon to maintain symmetry
+                            if (_instructionsByFloor
+                                    .containsKey(_currentFloorId) &&
+                                _instructionsByFloor[_currentFloorId]!
+                                    .isNotEmpty &&
+                                _currentInstruction.icon != null)
+                              const SizedBox(width: 50),
+                          ],
+                        ),
                     ],
                   ),
                 ),

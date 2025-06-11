@@ -10,13 +10,13 @@ import '../widgets/map_marker.dart';
 class NavigationDataProvider {
   // Cache for all venues and stairs
   static Map<String, List<MapMarker>>? _cachedVenues;
-  static final Map<int,List<String>> _allVenuesName = {};
+  static final Map<int,List<MapMarker>> _allVenuesName = {};
 
   static bool _isInitialized = false;
 
   NavigationDataProvider({http.Client? httpClient});
 
-  static Future<Map<int, List<String>>> getAllVenuesName() async {
+  static Future<Map<int, List<MapMarker>>> getAllVenuesName() async {
     if (!_isInitialized) {
       await _initializeVenues();
     }
@@ -30,7 +30,7 @@ class NavigationDataProvider {
       if (venue.label != null) {
         // If the floorId key doesn't exist, create it with a new list.
         // Then, add the venue label to the list for that floorId.
-        (_allVenuesName[venue.floorId] ??= []).add(venue.label!);
+        (_allVenuesName[venue.floorId] ??= []).add(venue);
       }
     }
 

@@ -2,7 +2,7 @@ part of 'navigation_bloc.dart';
 
 @immutable
 sealed class NavigationState extends Equatable{
-  final Map<int, List<String>>? allVenuesName;
+  final Map<int, List<MapMarker>>? allVenuesName;
 
   const NavigationState({this.allVenuesName});
 
@@ -23,7 +23,7 @@ final class SelectSourceDialogShownState extends NavigationState {
 
 final class AllVenuesLoadedState extends NavigationState {
   // The 'super' call passes the venues up to the base state.
-  const AllVenuesLoadedState({required Map<int, List<String>> allVenuesName})
+  const AllVenuesLoadedState({required Map<int, List<MapMarker>> allVenuesName})
       : super(allVenuesName: allVenuesName);
 }
 
