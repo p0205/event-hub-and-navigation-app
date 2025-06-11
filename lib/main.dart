@@ -5,7 +5,6 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:event_hub_and_navigation_app/auth/screens/app_entry_point.dart';
 import 'package:event_hub_and_navigation_app/feedback/bloc/feedback_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
-import 'package:event_hub_and_navigation_app/my_events/bloc/event_bloc.dart';
 import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,9 @@ import 'package:provider/provider.dart';
 
 import 'auth/bloc/auth_bloc.dart';
 import 'common_widget/navigation_provider.dart';
+import 'event_details/bloc/event_bloc.dart';
+import 'my_events/blocs/my_events_calendar_view_bloc/bloc/event_bloc.dart';
+import 'my_events/blocs/my_events_tab_view_bloc/bloc/event_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,8 +50,14 @@ Future<void> main() async {
           BlocProvider<HomeBloc>(
             create: (context) => HomeBloc()
           ),
-          BlocProvider<EventBloc>(
-              create: (context) => EventBloc()
+          BlocProvider<EventDetailsBloc>(
+              create: (context) => EventDetailsBloc()
+          ),
+          BlocProvider<MyEventsCalendarViewBloc>(
+              create: (context) => MyEventsCalendarViewBloc()
+          ),
+          BlocProvider<MyEventsTabViewBloc>(
+              create: (context) => MyEventsTabViewBloc()
           ),
           BlocProvider<FeedbackBloc>(
               create: (context) => FeedbackBloc()

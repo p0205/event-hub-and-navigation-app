@@ -1,5 +1,4 @@
 import 'package:event_hub_and_navigation_app/models/event.dart';
-import 'package:event_hub_and_navigation_app/my_events/bloc/event_bloc.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:event_hub_and_navigation_app/widgets/login_reminder_widget.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,8 @@ import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
 import 'package:event_hub_and_navigation_app/common_widgets/calendar.dart';
 
 import '../../auth/bloc/auth_bloc.dart';
-import '../../my_events/screens/event_details_page.dart'; // Ensure this points to calendar_event_model.dart if that's the name
+import '../../event_details/screen/event_details_page.dart';
+import '../blocs/my_events_calendar_view_bloc/bloc/event_bloc.dart'; // Ensure this points to calendar_event_model.dart if that's the name
 // import 'package:event_hub_and_navigation_app/utils/date_helper.dart'; // This might not be needed anymore, remove if unused
 
 class MyEventsCalenderViewPage extends StatefulWidget {
@@ -21,7 +21,7 @@ class MyEventsCalenderViewPage extends StatefulWidget {
 }
 
 class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
-  late final EventBloc _eventBloc;
+  late final MyEventsCalendarViewBloc _eventBloc;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -54,7 +54,7 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
   @override
   void initState() {
     super.initState();
-    _eventBloc = BlocProvider.of<EventBloc>(context);
+    _eventBloc = BlocProvider.of<MyEventsCalendarViewBloc>(context);
     _selectedDay = _focusedDay;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -150,18 +150,13 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        automaticallyImplyLeading: false,
-      ),
-      body: BlocBuilder<AuthBloc, AuthState>(
+    return BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is UnAuthenticatedState) {
             return const LoginReminderWidget();
           }
 
-          return BlocConsumer<EventBloc, EventState>(
+          return BlocConsumer<MyEventsCalendarViewBloc, MyEventsCalendarViewState>(
             bloc: _eventBloc,
             listener: (context, state) {
               if (state is CalenderEventLoadedState) {
@@ -214,7 +209,7 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
                   ),
                   const Divider(),
                   Expanded(
-                    child: state is EventLoadingState
+                    child: state is CalendarEventLoadingState
                         ? const Center(child: CircularProgressIndicator())
                         : state is CalendarEventErrorState
                         ? Center(child: Text(state.message))
@@ -282,7 +277,7 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
             },
           );
         },
-      ),
+
       // bottomNavigationBar: BottomNavigationBar(
       //   type: BottomNavigationBarType.fixed,
       //   currentIndex: 0,

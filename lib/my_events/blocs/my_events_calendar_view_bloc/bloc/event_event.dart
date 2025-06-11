@@ -1,14 +1,14 @@
 part of 'event_bloc.dart';
 
 @immutable
-sealed class EventEvent extends Equatable {
-  const EventEvent();
+sealed class CalendarViewEvent extends Equatable {
+  const CalendarViewEvent();
 
   @override
   List<Object> get props => [];
 }
 
-final class FetchMyUpcomingEvents extends EventEvent {
+final class FetchMyUpcomingEvents extends CalendarViewEvent {
 
   final int userId;
 
@@ -19,7 +19,7 @@ final class FetchMyUpcomingEvents extends EventEvent {
 }
 
 
-final class FetchMyPastEvents extends EventEvent {
+final class FetchMyPastEvents extends CalendarViewEvent {
 
   final int userId;
 
@@ -31,7 +31,7 @@ final class FetchMyPastEvents extends EventEvent {
 
 
 
-class FetchMyCalendarEventsByMonth extends EventEvent {
+class FetchMyCalendarEventsByMonth extends CalendarViewEvent {
   final int userId;
   final DateTime startDateTime;
   final DateTime endDateTime;
@@ -44,7 +44,7 @@ class FetchMyCalendarEventsByMonth extends EventEvent {
 
 
 
-final class FetchEventDetails extends EventEvent {
+final class FetchEventDetails extends CalendarViewEvent {
  final int eventId;
 
   const FetchEventDetails({required this.eventId});

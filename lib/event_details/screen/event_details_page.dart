@@ -8,8 +8,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../common_widget/navigation_provider.dart';
-import '../bloc/event_bloc.dart';
 import '../../feedback/bloc/feedback_bloc.dart';
+import '../bloc/event_bloc.dart';
 
 class EventDetailsPage extends StatefulWidget {
   final int eventId;
@@ -23,7 +23,7 @@ class EventDetailsPage extends StatefulWidget {
 }
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
-  late EventBloc _eventBloc;
+  late EventDetailsBloc _eventBloc;
   late FeedbackBloc _feedbackBloc;
   bool _hasFeedback = false;
   bool _isCheckingFeedback = true;
@@ -32,14 +32,15 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _eventBloc = BlocProvider.of<EventBloc>(context);
+    _eventBloc = BlocProvider.of<EventDetailsBloc>(context);
     _feedbackBloc = BlocProvider.of<FeedbackBloc>(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      _eventBloc.add(FetchEventDetails(eventId: widget.eventId));
       final authState = context.read<AuthBloc>().state;
       if (authState is AuthenticatedState) {
         _currentUserId = authState.user.id;
-        _eventBloc.add(FetchEventDetails(eventId: widget.eventId));
 
         // Check if user has already provided feedback for this event
         if (widget.shouldShowFeedbackBtn) {
@@ -73,7 +74,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           },
         ),
       ],
-      child: BlocBuilder<EventBloc, EventState>(
+      child: BlocBuilder<EventDetailsBloc, MyEventDetailsState>(
         bloc: _eventBloc,
         builder: (context, state) {
           if (state is EventDetailsLoadedState) {
@@ -163,7 +164,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                 ),
                 // Updated FloatingActionButton logic
                 floatingActionButton: _buildFeedbackButton(event));
-          } else if (state is EventErrorState) {
+          } else if (state is EventDetailsErrorState) {
             return Scaffold(
               appBar: AppBar(
                 title: const Text('Event Details'),
