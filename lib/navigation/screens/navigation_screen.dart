@@ -429,30 +429,27 @@ class _NavigationScreenState extends State<NavigationScreen> {
           // Ensure we have a valid path for the new floor
           if (_pathsByFloor.containsKey(nextFloorId)) {
             List<NavPath> newFloorPaths = _pathsByFloor[nextFloorId]!;
-
-            if (newFloorPaths.isNotEmpty && newFloorPaths[_getPathIndex(nextFloorId!)].points.isNotEmpty) {
+            final int pathIndex = _getPathIndex(nextFloorId!);
+            if (newFloorPaths.isNotEmpty && newFloorPaths[pathIndex].points.isNotEmpty) {
               // Update user position to the first point of the new floor's path
               _userNode = Node(
                 floorId: nextFloorId,
                 nodeId: -1,
                 name: 'User',
-                coord: newFloorPaths[_getPathIndex(nextFloorId)].points[0],
+                coord: newFloorPaths[pathIndex].points[0],
               );
               _currentPathPointIndex = 0;
             }
           }
         });
 
-        // Center the map on the user's new position
+        // Center the map on the user's new position with immediate rotation
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_userNode != null) {
             _interactiveMapKey.currentState?.goToPointOnPath(
               _userNode!.coord,
-              alignMapToPathSegmentIndex:
-                  _getCurrentNavPaths()?.length != null &&
-                          _getCurrentNavPaths()!.length > 1
-                      ? 0
-                      : null,
+              alignMapToPathSegmentIndex: 0,  // Force rotation calculation for first point
+              currentPathIndex: _getPathIndex(nextFloorId!),
             );
           }
         });
