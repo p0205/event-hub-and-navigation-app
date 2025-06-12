@@ -1,8 +1,8 @@
 import 'package:event_hub_and_navigation_app/common_widget/bottom_navigation_bar.dart';
-import 'package:event_hub_and_navigation_app/home/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
+import '../sign_up/screens/sign_up_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -38,10 +38,10 @@ class _SignInScreenState extends State<SignInScreen> {
         listener: (context, state) {
           print("Listener in sign in screen, Current state: $state");
           if (state is AuthenticatedState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sign-in successful!')),
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(content: Text('Sign-in successful!')),
 
-            );
+            // );
 
             Navigator.push(
               context,
@@ -119,6 +119,24 @@ class _SignInScreenState extends State<SignInScreen> {
                               ? const CircularProgressIndicator(color: Colors.white)
                               : const Text('Sign In'),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Don't have an account?"),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text('Sign Up'),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -8,6 +8,66 @@ import '../services/api.dart';
 import '../utils/constant.dart';
 
 class AuthRepository {
+
+  Future<User?> checkEmail(String email) async {
+    try {
+      final response = await ApiService.get('/auth/check-email', queryParameters: {
+        'email': email,
+      });
+
+        return User.fromJson(response.data);
+     
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response!.statusCode == 409) {
+          throw AuthException('User with this email is already registered.');
+        } else if (e.response!.statusCode == 404) {
+          throw AuthException('Email not found in university database.');
+        }
+        throw AuthException(e.response!.data['error'] ?? 'Failed to check email.');
+      } else {
+        throw NetworkException('Please check your internet connection.');
+      }
+    } catch (e) {
+      if (e is AuthException || e is NetworkException) {
+        rethrow;
+      }
+      throw AuthException('An unexpected error occurred while checking email.');
+    }
+  }
+
+
+  Future<String> signUp(String email, String phoneNo, String password) async {
+    try {
+      final response = await ApiService.post('/auth/sign-up', data: {
+        'email': email,
+        'phoneNo': phoneNo,
+        'rawPassword': password,
+      });
+
+      if (response.statusCode == 201) {
+        return response.data['message'] ?? 'Sign up successful';
+      } else {
+        throw AuthException('Unexpected response status: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response!.statusCode == 409) {
+          throw AuthException('User with this email is already registered.');
+        } else if (e.response!.statusCode == 400) {
+          throw BadRequestException(e.response!.data['error'] ?? 'Invalid sign up data.');
+        }
+        throw AuthException(e.response!.data['error'] ?? 'Failed to sign up.');
+      } else {
+        throw NetworkException('Please check your internet connection.');
+      }
+    } catch (e) {
+      if (e is AuthException || e is NetworkException) {
+        rethrow;
+      }
+      throw AuthException('An unexpected error occurred during sign up.');
+    }
+  }
   Future<User> signIn(String email, String password) async {
     try {
       final response = await ApiService.post('/auth/sign-in', data: {
@@ -16,7 +76,6 @@ class AuthRepository {
       });
 
       if (response.statusCode == 200) {
-        // ... (your existing cookie and user persistence logic) ...
         final cookieJar = ApiService.dio.interceptors
             .whereType<CookieManager>()
             .map((e) => e.cookieJar)
@@ -100,5 +159,34 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await ApiService.clearToken();
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final response = await ApiService.post('/auth/change-password', data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+
+      if (response.statusCode != 200) {
+        throw AuthException('Failed to change password');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response!.statusCode == 401) {
+          throw InvalidCredentialsException('Current password is incorrect');
+        } else if (e.response!.statusCode == 400) {
+          throw BadRequestException(e.response!.data['error'] ?? 'Invalid password data');
+        }
+        throw AuthException(e.response!.data['error'] ?? 'Failed to change password');
+      } else {
+        throw NetworkException('Please check your internet connection');
+      }
+    } catch (e) {
+      if (e is AuthException || e is NetworkException) {
+        rethrow;
+      }
+      throw AuthException('An unexpected error occurred while changing password');
+    }
   }
 }

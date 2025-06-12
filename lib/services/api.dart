@@ -86,5 +86,9 @@ class ApiService {
     return _dio.delete(path);
   }
 
+  static Future<Response> patch(String path, {Map<String, dynamic>? data}) async {
+    return _dio.patch(path, data: data);
+  }
+
   static Dio get dio => _dio;
 }

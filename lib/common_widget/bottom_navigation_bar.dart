@@ -1,8 +1,6 @@
 
 
-import 'package:event_hub_and_navigation_app/my_events/screens/my_events_calender_view_page.dart';
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
-import 'package:event_hub_and_navigation_app/my_events/screens/my_events_tab_view_page.dart';
 import 'package:event_hub_and_navigation_app/profile/screens/profile_screen.dart';
 
 import 'package:flutter/material.dart';

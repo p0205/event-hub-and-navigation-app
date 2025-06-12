@@ -17,6 +17,11 @@ import 'common_widget/navigation_provider.dart';
 import 'event_details/bloc/event_bloc.dart';
 import 'my_events/blocs/my_events_calendar_view_bloc/bloc/event_bloc.dart';
 import 'my_events/blocs/my_events_tab_view_bloc/bloc/event_bloc.dart';
+import 'auth/screens/sign_in_screen.dart';
+import 'auth/sign_up/screens/sign_up_success_screen.dart';
+import 'profile/bloc/profile_bloc.dart';
+import 'profile/screens/profile_screen.dart';
+import 'repositories/user_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,36 +46,39 @@ Future<void> main() async {
   // This ensures cookies can be managed from the start
 
   runApp(
-
     MultiProvider(
-        providers: [
-          BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc(),
-          ),
-          BlocProvider<HomeBloc>(
-            create: (context) => HomeBloc()
-          ),
-          BlocProvider<EventDetailsBloc>(
-              create: (context) => EventDetailsBloc()
-          ),
-          BlocProvider<MyEventsCalendarViewBloc>(
-              create: (context) => MyEventsCalendarViewBloc()
-          ),
-          BlocProvider<MyEventsTabViewBloc>(
-              create: (context) => MyEventsTabViewBloc()
-          ),
-          BlocProvider<FeedbackBloc>(
-              create: (context) => FeedbackBloc()
-          ),
-          BlocProvider<NavigationBloc>(
-              create: (context) => NavigationBloc()
-          ),
-          ChangeNotifierProvider(
-            create: (context) => NavigationProvider(),
-            child: const MyApp(),
-          ),
-          // Add other BLoCs here
-        ],
+      providers: [
+        RepositoryProvider(create: (context) => UserRepository()),
+        BlocProvider<AuthBloc>(
+          create: (context) => AuthBloc(),
+        ),
+        BlocProvider<HomeBloc>(
+          create: (context) => HomeBloc()
+        ),
+        BlocProvider<EventDetailsBloc>(
+            create: (context) => EventDetailsBloc()
+        ),
+        BlocProvider<MyEventsCalendarViewBloc>(
+            create: (context) => MyEventsCalendarViewBloc()
+        ),
+        BlocProvider<MyEventsTabViewBloc>(
+            create: (context) => MyEventsTabViewBloc()
+        ),
+        BlocProvider<FeedbackBloc>(
+            create: (context) => FeedbackBloc()
+        ),
+        BlocProvider<NavigationBloc>(
+            create: (context) => NavigationBloc()
+        ),
+        BlocProvider<ProfileBloc>(
+          create: (context) => ProfileBloc(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => NavigationProvider(),
+          child: const MyApp(),
+        ),
+        // Add other BLoCs here
+      ],
       child: const MyApp()))
     ;
 }
@@ -81,20 +89,37 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Event Hub',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 245, 197, 66)),
-        appBarTheme:  AppBarTheme(
-
-            centerTitle: true,
-            backgroundColor: Color.fromARGB(255, 245, 197, 66)
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(create: (context) => UserRepository()),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => AuthBloc()),
+          BlocProvider(
+            create: (context) => ProfileBloc(),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Event Hub',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 245, 197, 66)),
+            appBarTheme:  AppBarTheme(
+                centerTitle: true,
+                backgroundColor: Color.fromARGB(255, 245, 197, 66)
+            ),
+            useMaterial3: true,
+          ),
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const AppEntryPoint(),
+            '/sign-in': (context) => const SignInScreen(),
+            '/registration-success': (context) => const SignUpSuccessScreen(),
+            '/profile': (context) => const ProfileScreen(),
+          },
         ),
-        useMaterial3: true,
       ),
-      home: const AppEntryPoint()
-
     );
   }
 }

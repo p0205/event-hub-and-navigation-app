@@ -1,5 +1,4 @@
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
-import 'package:event_hub_and_navigation_app/widgets/login_reminder_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -7,7 +6,6 @@ import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
 import 'package:event_hub_and_navigation_app/common_widget/calendar.dart';
 
-import '../../auth/bloc/auth_bloc.dart';
 import '../../event_details/screen/event_details_page.dart'; // Ensure this points to calendar_event_model.dart if that's the name
 
 class HomePage extends StatefulWidget {
