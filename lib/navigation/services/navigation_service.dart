@@ -11,7 +11,7 @@ class NavigationService {
     final NavigationResponse navResponse = await NavigationRepo.getNavigationPath(source: source, destination: destination);
     // Check if this is multi-level navigation
 
-    Map<int, NavPath> pathsByFloor = navResponse.toMultiLevelNavPaths();
+    Map<int, List<NavPath>> pathsByFloor = navResponse.toMultiLevelNavPaths();
     Map<int, List<Offset>> transitionPoints = navResponse.getTransitionPoints();
     Set<int> involvedFloors = navResponse.getInvolvedFloors();
     Map<String, dynamic> result = {

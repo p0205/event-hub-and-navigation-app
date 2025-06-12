@@ -90,27 +90,22 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
 
   // Helper method to calculate and dispatch the event
   void _fetchEventsForFocusedMonth() {
-    print("DEBUG: _fetchEventsForFocusedMonth called with focusedDay: $_focusedDay");
     if (_currentUserId == null) {
-      print("DEBUG: _currentUserId is null, returning");
       return;
     }
 
     // Check if we have cached events for this month
     if (_hasCachedEvents(_focusedDay)) {
-      print("DEBUG: Using cached events for month: ${_getCacheKey(_focusedDay)}");
       _updateEventsFromCache(_focusedDay);
       return;
     }
 
     // Calculate the start of the _focusedDay's month
     DateTime startOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    print("DEBUG: startOfMonth: $startOfMonth");
 
     // Calculate the end of the _focusedDay's month
     DateTime endOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0)
         .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999));
-    print("DEBUG: endOfMonth: $endOfMonth");
 
     // Dispatch the event with the calculated date range
     _eventBloc.add(
@@ -192,7 +187,6 @@ class _MyEventsCalenderViewPageState extends State<MyEventsCalenderViewPage> {
                       calendarFormat: _calendarFormat,
                       onDaySelected: _onDaySelected,
                       onPageChanged: (focusedDay) {
-                        print('DEBUG: Calendar page changed to: $focusedDay');
                         setState(() {
                           _focusedDay = focusedDay;
                         });

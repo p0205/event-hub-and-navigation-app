@@ -33,6 +33,11 @@ class NavigationResponse {
     if (simplifiedSegments.isNotEmpty) {
       allPoints.add(simplifiedSegments.first.startCoord);
       for (var segment in simplifiedSegments) {
+        // If we encounter a floor transition, end the current path
+        if (segment.segmentType == "inter_floor_transition") {
+          allPoints.add(segment.endCoord);
+          break;
+        }
         allPoints.add(segment.endCoord);
       }
     }
@@ -47,39 +52,52 @@ class NavigationResponse {
   }
 
   // Multi-level support - returns separate NavPath for each floor using toNavPath
-  Map<int, NavPath> toMultiLevelNavPaths({
+  Map<int, List<NavPath>> toMultiLevelNavPaths({
     Color? color,
     double? width,
   }) {
     Map<int, List<NavSegment>> segmentsByFloor = {};
-    Map<int, NavPath> pathsByFloor = {};
+    Map<int, List<NavPath>> pathsByFloor = {};
 
     // Group segments by floor
     for (var segment in simplifiedSegments) {
-      // Only process "segment" type (same-floor walking paths)
-      // if (segment.segmentType == "segment" ||segment.segmentType == "stairs" ||) {
-      int floorId = segment.startFloodId; // Same as endFloorId for segments
+      int floorId = segment.startFloodId;
       segmentsByFloor.putIfAbsent(floorId, () => []);
       segmentsByFloor[floorId]!.add(segment);
-    // }
     }
 
-    // Create a temporary NavigationResponse for each floor and use toNavPath
+    // Create paths for each floor
     segmentsByFloor.forEach((floorId, segments) {
       if (segments.isNotEmpty) {
-        // Create a temporary NavigationResponse with segments for this floor only
-        NavigationResponse floorNavResponse = NavigationResponse(
-          simplifiedSegments: segments,
-          sourceNode: sourceNode,
-          desNode: desNode,
-        );
+        pathsByFloor[floorId] = [];
+        List<NavSegment> currentPathSegments = [];
+        
+        for (var segment in segments) {
+          currentPathSegments.add(segment);
+          
+          // If we encounter a floor transition or it's the last segment
+          if (segment.segmentType == "inter_floor_transition" || 
+              segment == segments.last) {
+            // Create a temporary NavigationResponse with current segments
+            NavigationResponse floorNavResponse = NavigationResponse(
+              simplifiedSegments: currentPathSegments,
+              sourceNode: sourceNode,
+              desNode: desNode,
+            );
 
-        // Use the existing toNavPath method
-        pathsByFloor[floorId] = floorNavResponse.toNavPath(
-          floorId: floorId,
-          color: color,
-          width: width,
-        );
+            // Add the path to the floor's list of paths
+            pathsByFloor[floorId]!.add(
+              floorNavResponse.toNavPath(
+                floorId: floorId,
+                color: color,
+                width: width,
+              ),
+            );
+            
+            // Start a new path
+            currentPathSegments = [];
+          }
+        }
       }
     });
 

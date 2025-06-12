@@ -34,8 +34,7 @@ class MapMarker extends StatelessWidget {
       throw FormatException(
           'Coordinates must be a list of two numbers: [x, y]');
     }
-    print("DEBUG - Processing marker JSON: $json");
-    
+
     final double x = (coords[0] as num).toDouble();
     final double y = (coords[1] as num).toDouble();
     
@@ -45,8 +44,7 @@ class MapMarker extends StatelessWidget {
     final int floorId = json['floor_id'] as int;
     final String? image = json['venue_image'] as String?;
     
-    print("DEBUG - Extracted values - name: $name, fullName: $fullName, floorId: $floorId");
-    
+
     final marker = MapMarker(
       position: Offset(x, y),
       label: name,
@@ -56,16 +54,13 @@ class MapMarker extends StatelessWidget {
       color: Colors.orange
     );
     
-    print("DEBUG - Created marker - label: ${marker.label}, venueFullName: ${marker.venueFullName}");
     return marker;
   }
 
   @override
   Widget build(BuildContext context) {
-    print("DEBUG - Build method - venueFullName: $venueFullName, label: $label"); // Debug at start of build
+    // Debug at start of build
     // ---------------------------------------------------------------------
-    print("VENUE: $venueFullName");
-    print("VENUE: $label");
     // print('MapMarker build - imageUrl: $imageUrl'); // Debug log
     // 1. Calculate TextSpan size for the label
     final textStyle = TextStyle(
@@ -246,8 +241,8 @@ class MapMarker extends StatelessWidget {
   }
 
   void _showInfo(BuildContext context) {
-    print("MapMarker - Image URL: $imageUrl"); // Debug log
-    print("MapMarker - venueFullName: $venueFullName"); // Debug log
+    // Debug log
+    // Debug log
 
     if (imageUrl == null || imageUrl!.isEmpty) {
       // Debug log

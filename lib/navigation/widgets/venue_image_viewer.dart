@@ -14,8 +14,6 @@ class VenueImageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("Title");
-    print("Image: $imageUrl");
     return Dialog(
       insetPadding: EdgeInsets.zero,
       child: LayoutBuilder(
@@ -71,7 +69,6 @@ class VenueImageViewer extends StatelessWidget {
                       imageProvider: CachedNetworkImageProvider(
                         imageUrl,
                         errorListener: (error) {
-                          print('CachedNetworkImageProvider error: $error');
                         },
                       ),
                       minScale: PhotoViewComputedScale.contained,

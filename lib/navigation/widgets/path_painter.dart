@@ -3,45 +3,43 @@ import 'package:flutter/material.dart';
 import '../models/nav_path.dart';
 
 class PathPainter extends CustomPainter {
-  final NavPath naviPath;
+  final List<NavPath> naviPaths;
   const PathPainter({
-    required this.naviPath,
+    required this.naviPaths,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Paint for the path itself
-    final pathPaint = Paint()
-      ..color = naviPath.color // Path color comes from naviPath
-      ..strokeWidth = naviPath.width
-      ..style = PaintingStyle.stroke;
+    for (var naviPath in naviPaths) {
+      // Paint for the path itself
+      final pathPaint = Paint()
+        ..color = naviPath.color
+        ..strokeWidth = naviPath.width
+        ..style = PaintingStyle.stroke;
 
-    final pathDrawing = Path()
-      ..moveTo(
-        naviPath.points[0].dx,
-        naviPath.points[0].dy,
-      );
+      final pathDrawing = Path()
+        ..moveTo(
+          naviPath.points[0].dx,
+          naviPath.points[0].dy,
+        );
 
-    for (var i = 1; i < naviPath.points.length; i++) {
-      final point = (naviPath.points[i]);
-      pathDrawing.lineTo(point.dx, point.dy);
+      for (var i = 1; i < naviPath.points.length; i++) {
+        final point = (naviPath.points[i]);
+        pathDrawing.lineTo(point.dx, point.dy);
+      }
+
+      canvas.drawPath(pathDrawing, pathPaint);
+
+      // Draw arrows for this path
+      _drawArrows(canvas, naviPath);
     }
-
-    canvas.drawPath(pathDrawing, pathPaint); // Draw path with pathPaint
-
-    // Call _drawArrows with the separate color for arrows
-    _drawArrows(canvas, naviPath); // No longer passing 'pathPaint'
   }
 
   void _drawArrows(Canvas canvas, NavPath path) {
     // Paint for the arrows
     final arrowPaint = Paint()
-      ..color = const Color.fromARGB(255, 39, 44, 49); // Set your desired arrow color here, e.g., Colors.black, Colors.red, etc.
-      // You can also use Colors.white, Colors.orange, etc.
-      // Or even a color derived from naviPath.color if you want a subtle difference
-      // ..color = naviPath.color.withOpacity(0.8); // Example: slightly transparent version of path color
-      
-      arrowPaint.style = PaintingStyle.fill; // Arrows are typically filled
+      ..color = const Color.fromARGB(255, 39, 44, 49)
+      ..style = PaintingStyle.fill;
 
     const double arrowTipLength = 7.0;
     const double arrowBaseSpread = 7.0;
@@ -64,7 +62,7 @@ class PathPainter extends CustomPainter {
             ..lineTo(-arrowTipLength, arrowBaseSpread)
             ..lineTo(-arrowTipLength, -arrowBaseSpread)
             ..close(),
-          arrowPaint, // Draw arrow with arrowPaint
+          arrowPaint,
         );
 
         canvas.restore();
@@ -74,6 +72,6 @@ class PathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant PathPainter oldDelegate) {
-    return oldDelegate.naviPath != naviPath;
+    return oldDelegate.naviPaths != naviPaths;
   }
 }

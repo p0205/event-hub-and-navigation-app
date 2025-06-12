@@ -74,17 +74,16 @@ class NavigationDataProvider {
       
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        print('API Response Data: $data'); // Debug log for full response
+        // Debug log for full response
         
         final List<dynamic> venuesJson = data['venues'] as List<dynamic>;
-        print('Venues JSON: $venuesJson'); // Debug log for venues data
+        // Debug log for venues data
         
         final List<dynamic> stairsJson = data['stair_nodes'] as List<dynamic>;
-        print('Stairs JSON: $stairsJson'); // Debug log for stairs data
+        // Debug log for stairs data
         
         final List<MapMarker> venues = venuesJson
             .map((venueJson) {
-              print('DEBUG - Processing VENUE JSON: $venueJson');
               return MapMarker.fromJson(venueJson as Map<String, dynamic>);
             })
             .toList();
@@ -92,7 +91,6 @@ class NavigationDataProvider {
 
         final List<MapMarker> stairs = stairsJson
             .map((stairJson) {
-              print('DEBUG - Processing STAIR JSON: $stairJson');
               return MapMarker.fromJson(stairJson as Map<String, dynamic>);
             })
             .toList();

@@ -15,7 +15,7 @@ import '../widgets/path_painter.dart';
 
 class InteractiveSvgMap extends StatefulWidget {
   final bool isStepByStep;
-  final NavPath? naviPath;
+  final List<NavPath>? naviPaths;
   final Node? source;
   final Node? des;
   final Node? userNode;
@@ -34,7 +34,7 @@ class InteractiveSvgMap extends StatefulWidget {
   const InteractiveSvgMap({
     super.key,
     required this.isStepByStep,
-    this.naviPath,
+    this.naviPaths,
     this.source,
     this.des,
     this.userNode,
@@ -308,11 +308,19 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
     double targetRotation = preservedRotation ?? _rotation;
     bool shouldRotate = false;
 
-    if (widget.naviPath != null && widget.naviPath!.points.isNotEmpty && preservedRotation == null) {
-      int currentIndex = widget.naviPath!.points.indexOf(_currentUserNode!.coord);
-      if (currentIndex != -1 && currentIndex < widget.naviPath!.points.length - 1) {
-        final Offset segmentStart = widget.naviPath!.points[currentIndex];
-        final Offset segmentEnd = widget.naviPath!.points[currentIndex + 1];
+    if (widget.naviPaths != null &&
+        widget.naviPaths!.isNotEmpty &&
+        widget.naviPaths!.any((path) => path.floorId == widget.currentFloor.floorId)) {
+      // Find the current path for this floor
+      final currentPath = widget.naviPaths!.firstWhere(
+        (path) => path.floorId == widget.currentFloor.floorId,
+        orElse: () => widget.naviPaths!.first,
+      );
+      
+      int currentIndex = currentPath.points.indexOf(_currentUserNode!.coord);
+      if (currentIndex != -1 && currentIndex < currentPath.points.length - 1) {
+        final Offset segmentStart = currentPath.points[currentIndex];
+        final Offset segmentEnd = currentPath.points[currentIndex + 1];
         final Offset segmentVector = Offset(
           segmentEnd.dx - segmentStart.dx,
           segmentEnd.dy - segmentStart.dy,
@@ -439,20 +447,25 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
     double desiredScale = _animationTargetScale.clamp(_minScale, _maxScale);
     double calculatedRotation = _rotation;
 
-    if (widget.naviPath != null &&
+    if (widget.naviPaths != null &&
         alignMapToPathSegmentIndex != null &&
-        widget.naviPath!.points.isNotEmpty) {
+        widget.naviPaths!.isNotEmpty) {
+      // Find the current path for this floor
+      final currentPath = widget.naviPaths!.firstWhere(
+        (path) => path.floorId == widget.currentFloor.floorId,
+        orElse: () => widget.naviPaths!.first,
+      );
+      
       if (alignMapToPathSegmentIndex >= 0 &&
-          alignMapToPathSegmentIndex < widget.naviPath!.points.length - 1) {
-        final Offset segmentStart =
-        widget.naviPath!.points[alignMapToPathSegmentIndex];
-        final Offset segmentEnd =
-        widget.naviPath!.points[alignMapToPathSegmentIndex + 1];
+          alignMapToPathSegmentIndex < currentPath.points.length - 1) {
+        final Offset segmentStart = currentPath.points[alignMapToPathSegmentIndex];
+        final Offset segmentEnd = currentPath.points[alignMapToPathSegmentIndex + 1];
         final Offset segmentVector = Offset(
-            segmentEnd.dx - segmentStart.dx, segmentEnd.dy - segmentStart.dy);
+          segmentEnd.dx - segmentStart.dx,
+          segmentEnd.dy - segmentStart.dy,
+        );
         if (segmentVector.dx.abs() > 1e-6 || segmentVector.dy.abs() > 1e-6) {
-          final double segmentAngle =
-          math.atan2(segmentVector.dy, segmentVector.dx);
+          final double segmentAngle = math.atan2(segmentVector.dy, segmentVector.dx);
           calculatedRotation = (-math.pi / 2) - segmentAngle;
         }
       }
@@ -705,11 +718,13 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                             fit: BoxFit.none,
                             alignment: Alignment.topLeft,
                           ),
-                          if (widget.naviPath != null &&
-                              widget.naviPath!.points.isNotEmpty &&
-                              widget.naviPath!.floorId == widget.currentFloor.floorId)
+                          if (widget.naviPaths != null &&
+                              widget.naviPaths!.isNotEmpty &&
+                              widget.naviPaths!.any((path) => path.floorId == widget.currentFloor.floorId))
                             CustomPaint(
-                              painter: PathPainter(naviPath: widget.naviPath!),
+                              painter: PathPainter(
+                                naviPaths: widget.naviPaths!.where((path) => path.floorId == widget.currentFloor.floorId).toList(),
+                              ),
                               size: svgSize,
                             ),
 
