@@ -479,6 +479,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _interactiveMapKey.currentState?.goToPointOnPath(
         _userNode!.coord,
         alignMapToPathSegmentIndex: _currentPathPointIndex,
+        currentPathIndex: _getPathIndex(_currentFloorId),
       );
     } else {
       int nextPointIndex = _currentPathPointIndex + 1;
@@ -524,6 +525,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
         _interactiveMapKey.currentState?.goToPointOnPath(
           _userNode!.coord,
           alignMapToPathSegmentIndex: null,
+          currentPathIndex: _getPathIndex(_currentFloorId),
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -566,11 +568,13 @@ class _NavigationScreenState extends State<NavigationScreen> {
         _interactiveMapKey.currentState?.goToPointOnPath(
           _userNode!.coord,
           alignMapToPathSegmentIndex: null,
+          currentPathIndex: _getPathIndex(_currentFloorId),
         );
       } else {
         _interactiveMapKey.currentState?.goToPointOnPath(
           _userNode!.coord,
           alignMapToPathSegmentIndex: _currentPathPointIndex,
+          currentPathIndex: _getPathIndex(_currentFloorId),
         );
       }
     }

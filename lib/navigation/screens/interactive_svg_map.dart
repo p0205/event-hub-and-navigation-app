@@ -436,7 +436,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
   }
 
   void goToPointOnPath(Offset targetPointSvgToCenter,
-      {int? alignMapToPathSegmentIndex}) {
+      {int? alignMapToPathSegmentIndex, int? currentPathIndex}) {
     if (!mounted) return;
 
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
@@ -456,10 +456,19 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
         orElse: () => widget.naviPaths!.first,
       );
       
+      // Get the correct path based on currentPathIndex
+      final List<NavPath> pathsForFloor = widget.naviPaths!
+          .where((path) => path.floorId == widget.currentFloor.floorId)
+          .toList();
+      
+      final NavPath pathToUse = currentPathIndex != null && 
+          currentPathIndex < pathsForFloor.length ? 
+          pathsForFloor[currentPathIndex] : currentPath;
+      
       if (alignMapToPathSegmentIndex >= 0 &&
-          alignMapToPathSegmentIndex < currentPath.points.length - 1) {
-        final Offset segmentStart = currentPath.points[alignMapToPathSegmentIndex];
-        final Offset segmentEnd = currentPath.points[alignMapToPathSegmentIndex + 1];
+          alignMapToPathSegmentIndex < pathToUse.points.length - 1) {
+        final Offset segmentStart = pathToUse.points[alignMapToPathSegmentIndex];
+        final Offset segmentEnd = pathToUse.points[alignMapToPathSegmentIndex + 1];
         final Offset segmentVector = Offset(
           segmentEnd.dx - segmentStart.dx,
           segmentEnd.dy - segmentStart.dy,
