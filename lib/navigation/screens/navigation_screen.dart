@@ -218,16 +218,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
                         _currentFloorId = venue.floorId;
                         _loadVenueNodes();
                       });
-
-                      //
-                      // // Find the venue marker that matches the selected source
-                      // final venueMarker = venueNodes.firstWhere(
-                      //   (marker) => marker.label == venue.label,
-                      //   orElse: () => stairNodes.firstWhere(
-                      //     (marker) => marker.label == venue.label,
-                      //     orElse: () => throw Exception('Venue not found'),
-                      //   ),
-                      // );
                     }
 
                     setState(() {

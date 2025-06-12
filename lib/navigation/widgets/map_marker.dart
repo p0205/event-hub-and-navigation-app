@@ -5,6 +5,7 @@ import 'venue_image_viewer.dart';
 class MapMarker extends StatelessWidget {
   final Offset position; 
   final String? label;
+  final String? venueFullName;
   final Color color;
   final double radius;
   final double mapRotation;
@@ -16,6 +17,7 @@ class MapMarker extends StatelessWidget {
     super.key,
     required this.position,
      this.label,
+    this.venueFullName,
     this.color = Colors.blue,
     this.radius = 10.0,
     this.mapRotation = 0.0,
@@ -32,28 +34,38 @@ class MapMarker extends StatelessWidget {
       throw FormatException(
           'Coordinates must be a list of two numbers: [x, y]');
     }
+    print("DEBUG - Processing marker JSON: $json");
+    
     final double x = (coords[0] as num).toDouble();
     final double y = (coords[1] as num).toDouble();
-    final String? name = json['name'] as String?;
-    final int floorId = json['floor_id'] as int;
     
-    // Debug print to see the full JSON
-
-    // Get the venue_image directly from the root of the JSON
+    // Handle both venue and stair data structures
+    final String? name = json['name'] as String?;
+    final String? fullName = json['full_name'] as String?;
+    final int floorId = json['floor_id'] as int;
     final String? image = json['venue_image'] as String?;
-    // Debug print
-
-    return MapMarker(
+    
+    print("DEBUG - Extracted values - name: $name, fullName: $fullName, floorId: $floorId");
+    
+    final marker = MapMarker(
       position: Offset(x, y),
       label: name,
+      venueFullName: fullName,
       imageUrl: image,
       floorId: floorId,
       color: Colors.orange
     );
+    
+    print("DEBUG - Created marker - label: ${marker.label}, venueFullName: ${marker.venueFullName}");
+    return marker;
   }
 
   @override
   Widget build(BuildContext context) {
+    print("DEBUG - Build method - venueFullName: $venueFullName, label: $label"); // Debug at start of build
+    // ---------------------------------------------------------------------
+    print("VENUE: $venueFullName");
+    print("VENUE: $label");
     // print('MapMarker build - imageUrl: $imageUrl'); // Debug log
     // 1. Calculate TextSpan size for the label
     final textStyle = TextStyle(
@@ -218,7 +230,6 @@ class MapMarker extends StatelessWidget {
     final alignmentY = markerRowHeight > 0 ? yAlignmentRelativeToRowTopLeft / markerRowHeight : 0.5;
 
     final rotationAlignment = FractionalOffset(alignmentX, alignmentY);
-    // ---------------------------------------------------------------------
 
     return Positioned(
       left: finalLeft,
@@ -235,15 +246,15 @@ class MapMarker extends StatelessWidget {
   }
 
   void _showInfo(BuildContext context) {
-    // print("MapMarker - Image URL: $imageUrl"); // Debug log
-    // print("MapMarker - Label: $label"); // Debug log
+    print("MapMarker - Image URL: $imageUrl"); // Debug log
+    print("MapMarker - venueFullName: $venueFullName"); // Debug log
 
     if (imageUrl == null || imageUrl!.isEmpty) {
       // Debug log
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-          title: Text(label ?? "Venue"),
+          title: Text(venueFullName ?? "Venue"),
           content: Text('No image available for ${label ?? "this venue"}.'),
         actions: [
           TextButton(
@@ -260,7 +271,7 @@ class MapMarker extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => VenueImageViewer(
-        title: label ?? "Venue",
+        title: venueFullName ?? "Venue",
         imageUrl: imageUrl!,
       ),
     );

@@ -718,12 +718,15 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                                 MapMarker(
                                   position: venue.position,
                                   label: venue.label ?? 'Venue',
+                                  venueFullName: venue.venueFullName,
                                   color: venue.color,
                                   radius: 12,
                                   mapRotation: _rotation,
                                   imageUrl: venue.imageUrl,
                                   floorId: venue.floorId,
-                                )),
+                                )
+                            ),
+
 
                           ],
                           ...?widget.transitionPoints?.map((transitionPoint) =>
@@ -746,7 +749,7 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                             MapMarker(
                               position: widget.des!.coord,
                               color: Colors.redAccent,
-                              radius: 10.0,
+                              radius: 15.0,
                               mapRotation: _rotation,
                               floorId: 1, // Default to ground floor for destination
                             ),

@@ -14,6 +14,8 @@ class VenueImageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("Title");
+    print("Image: $imageUrl");
     return Dialog(
       insetPadding: EdgeInsets.zero,
       child: LayoutBuilder(
@@ -36,7 +38,7 @@ class VenueImageViewer extends StatelessWidget {
               children: [
                 // Header with title and close button
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).dialogBackgroundColor,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -48,7 +50,8 @@ class VenueImageViewer extends StatelessWidget {
                         child: Text(
                           title,
                           style: Theme.of(context).textTheme.titleLarge,
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          maxLines: 2,
                         ),
                       ),
                       IconButton(
