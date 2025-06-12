@@ -33,6 +33,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   // Multi-level navigation state
   Map<int, List<NavPath>> _pathsByFloor = {};
+  Map<int, int> _pathsIndexByFloor = {};
   Map<int, List<Offset>> _transitionPoints = {};
   Set<int> _involvedFloors = {};
   int _currentFloorId = 1; // Track current floor being viewed
@@ -57,7 +58,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   // Navigation flow state
   Map<int, List<TurnInstruction>> _instructionsByFloor = {};
   late TurnInstruction _currentInstruction;
-  final Map<int, int> _pathPointIndicesByFloor = {};  // Track path point index for each floor
+  int _currentPathPointIndex = 0;
   bool _isPendingRotation = false;
   int _previousPathPointIndex = -1;
   bool _isNavigationCompleted = false;
@@ -261,7 +262,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _desNode = null;
     _userNode = null;
     _instructionsByFloor.clear();
-    _pathPointIndicesByFloor.clear();  // Reset path point indices
+    _pathsIndexByFloor.clear();
+    _currentPathPointIndex = 0;
     _isPendingRotation = false;
     _previousPathPointIndex = -1;
     _isNavigationCompleted = false;
@@ -278,12 +280,25 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return _transitionPoints[_currentFloorId] ?? [];
   }
 
+  int _getPathIndex(int floorId){
+    print("Current floor: $floorId");
+    print("Path Index: $_pathsIndexByFloor[floorId]");
+    return _pathsIndexByFloor[floorId] ?? 0;
+  }
+
+  void _setPathIndex(int floorId, int pathIndex) {
+  _pathsIndexByFloor[floorId] = pathIndex; // This line
+}
+
+
   // Handle floor changes in multi-level navigation
   void _handleFloorChange(int floorId) {
     // Map floor names to floor IDs (adjust based on your floor naming)
 
     setState(() {
+
       _currentFloorId = floorId;
+      _setPathIndex(floorId, _getPathIndex(floorId));
     });
 
     // Reload venue nodes for the new floor
@@ -340,9 +355,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
           await _handleFloorTransition();
           // After floor transition, continue with navigation on the new floor
           currentPaths = _getCurrentNavPaths();
-          if (currentPaths?.isNotEmpty == true && 
-              currentPaths![0].points.isNotEmpty) {
-            _handleSingleLevelNavigation(currentPaths[0]);
+          if (currentPaths?.isNotEmpty == true &&
+              currentPaths![_getPathIndex(_currentFloorId)].points.isNotEmpty) {
+            _handleSingleLevelNavigation(currentPaths[_getPathIndex(_currentFloorId)]);
           }
           return;
         }
@@ -350,7 +365,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
 
     if (mounted && currentPaths?.isNotEmpty == true) {
-      _handleSingleLevelNavigation(currentPaths![0]);
+      _handleSingleLevelNavigation(currentPaths![_getPathIndex(_currentFloorId)]);
     }
   }
 
@@ -379,10 +394,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
 
     if (nextFloorId != null && transitionPoint != null) {
-      // Store the previous floor ID before transition
-      final int previousFloorId = _currentFloorId;
-      
       setState(() {
+        _setPathIndex(_currentFloorId, _getPathIndex(_currentFloorId)+1);
         _currentFloorId = nextFloorId!;
         _userNode = Node(
           floorId: nextFloorId,
@@ -390,11 +403,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
           name: 'User',
           coord: transitionPoint!,
         );
+        // Reset navigation state for new floor
+        _currentPathPointIndex = 0;
+        _previousPathPointIndex = -1;
         _isPendingRotation = true;
       });
 
       // Notify the map to change floors
-      _interactiveMapKey.currentState?.changeFloor(nextFloorId);
+      _interactiveMapKey.currentState?.changeFloor(nextFloorId!);
 
       // Wait for floor transition to complete
       await Future.delayed(const Duration(milliseconds: 800));
@@ -413,22 +429,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
           // Ensure we have a valid path for the new floor
           if (_pathsByFloor.containsKey(nextFloorId)) {
             List<NavPath> newFloorPaths = _pathsByFloor[nextFloorId]!;
-            if (newFloorPaths.isNotEmpty && newFloorPaths[0].points.isNotEmpty) {
-              // Update user position to the transition point on the new floor
-          
-              // Update path indices for both floors
-              if (_pathPointIndicesByFloor.containsKey(previousFloorId)) {
-                // Increment the previous floor's index
-                _pathPointIndicesByFloor[previousFloorId] = _pathPointIndicesByFloor[previousFloorId]! + 1;
-              }
 
-              // Update path indices for both floors
-              if (!_pathPointIndicesByFloor.containsKey(nextFloorId)) {
-                // Increment the previous floor's index
-                 _pathPointIndicesByFloor[nextFloorId!] = 0;
-              }
-              
-              
+            if (newFloorPaths.isNotEmpty && newFloorPaths[_getPathIndex(nextFloorId!)].points.isNotEmpty) {
+              // Update user position to the first point of the new floor's path
+              _userNode = Node(
+                floorId: nextFloorId,
+                nodeId: -1,
+                name: 'User',
+                coord: newFloorPaths[_getPathIndex(nextFloorId)].points[0],
+              );
+              _currentPathPointIndex = 0;
             }
           }
         });
@@ -438,7 +448,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
           if (_userNode != null) {
             _interactiveMapKey.currentState?.goToPointOnPath(
               _userNode!.coord,
-              alignMapToPathSegmentIndex: _getCurrentPathPointIndex(),
+              alignMapToPathSegmentIndex:
+                  _getCurrentNavPaths()?.length != null &&
+                          _getCurrentNavPaths()!.length > 1
+                      ? 0
+                      : null,
             );
           }
         });
@@ -464,10 +478,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
       _interactiveMapKey.currentState?.goToPointOnPath(
         _userNode!.coord,
-        alignMapToPathSegmentIndex: _getCurrentPathPointIndex(),
+        alignMapToPathSegmentIndex: _currentPathPointIndex,
       );
     } else {
-      int nextPointIndex = _getCurrentPathPointIndex() + 1;
+      int nextPointIndex = _currentPathPointIndex + 1;
       bool isMovingToDestination = false;
 
       if (nextPointIndex < currentPath.points.length && _desNode != null) {
@@ -480,22 +494,22 @@ class _NavigationScreenState extends State<NavigationScreen> {
       }
 
       setState(() {
-        _previousPathPointIndex = _getCurrentPathPointIndex();
-        _setCurrentPathPointIndex(nextPointIndex);
+        _previousPathPointIndex = _currentPathPointIndex;
+        _currentPathPointIndex = nextPointIndex;
 
-        if (_getCurrentPathPointIndex() >= currentPath.points.length) {
-          _setCurrentPathPointIndex(currentPath.points.length - 1);
+        if (_currentPathPointIndex >= currentPath.points.length) {
+          _currentPathPointIndex = currentPath.points.length - 1;
         }
         _userNode = Node(
           floorId: _currentFloorId,
           nodeId: -1,
           name: 'User',
-          coord: currentPath.points[_getCurrentPathPointIndex()],
+          coord: currentPath.points[_currentPathPointIndex],
         );
       });
 
       if (isMovingToDestination ||
-          (_getCurrentPathPointIndex() == currentPath.points.length - 1 &&
+          (_currentPathPointIndex == currentPath.points.length - 1 &&
               _desNode != null &&
               NavigationService.isDestinationReached(_userNode!.coord,
                   _desNode!.coord, _destinationReachedThreshold))) {
@@ -523,7 +537,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
       String nextInstructionText = "Follow the path.";
 
-      if (_getCurrentPathPointIndex() < currentPath.points.length - 1) {
+      if (_currentPathPointIndex < currentPath.points.length - 1) {
         List<TurnInstruction> upcomingTurnInstruction =
             TurnInstructionService.findInstructionForLocation(
                 _instructionsByFloor[_currentFloorId]!, _userNode!.coord);
@@ -556,20 +570,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
       } else {
         _interactiveMapKey.currentState?.goToPointOnPath(
           _userNode!.coord,
-          alignMapToPathSegmentIndex: _getCurrentPathPointIndex(),
+          alignMapToPathSegmentIndex: _currentPathPointIndex,
         );
       }
     }
-  }
-
-  // Get current path point index for the current floor
-  int _getCurrentPathPointIndex() {
-    return _pathPointIndicesByFloor[_currentFloorId] ?? 0;
-  }
-
-  // Set current path point index for the current floor
-  void _setCurrentPathPointIndex(int index) {
-    _pathPointIndicesByFloor[_currentFloorId] = index;
   }
 
   Future<void> _showNavigationOptions() async {
@@ -622,7 +626,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 des: _desNode,
                 userNode: _userNode,
                 userLocation: _userNode?.coord,
-                currentPathPointIndex: _getCurrentPathPointIndex(),
+                currentPathPointIndex: _currentPathPointIndex,
                 venueNodes: venueNodes,
                 stairNodes: stairNodes,
                 transitionPoints: _getCurrentFloorTransitions(),
