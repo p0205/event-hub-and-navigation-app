@@ -5,11 +5,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 class VenueImageViewer extends StatelessWidget {
   final String title;
   final String imageUrl;
+  final List<Widget>? actions;
 
   const VenueImageViewer({
     super.key,
     required this.title,
     required this.imageUrl,
+    this.actions,
   });
 
   @override
@@ -111,6 +113,18 @@ class VenueImageViewer extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (actions != null)
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).dialogBackgroundColor,
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: actions!,
+                    ),
+                  ),
               ],
             ),
           );

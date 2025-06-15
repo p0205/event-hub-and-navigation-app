@@ -12,6 +12,8 @@ class MapMarker extends StatelessWidget {
   final IconData? customIconData;
   final String? imageUrl;
   final int floorId;
+  final Function(MapMarker)? onSetAsSource;
+  final Function(MapMarker)? onSetAsDestination;
 
   MapMarker({
     super.key,
@@ -24,6 +26,8 @@ class MapMarker extends StatelessWidget {
     this.customIconData,
     this.imageUrl,
     required this.floorId,
+    this.onSetAsSource,
+    this.onSetAsDestination,
   }) {
     // print('MapMarker constructor - imageUrl: $imageUrl'); // Debug log
   }
@@ -44,7 +48,6 @@ class MapMarker extends StatelessWidget {
     final int floorId = json['floor_id'] as int;
     final String? image = json['venue_image'] as String?;
     
-
     final marker = MapMarker(
       position: Offset(x, y),
       label: name,
@@ -230,7 +233,7 @@ class MapMarker extends StatelessWidget {
       left: finalLeft,
       top: finalTop,
       child: GestureDetector(
-        onTap: () => _showInfo(context),
+        onTap: () => showInfo(context),
         child: Transform.rotate(
           angle: -mapRotation, // Inverse of map's rotation
           alignment: rotationAlignment,
@@ -240,34 +243,71 @@ class MapMarker extends StatelessWidget {
     );
   }
 
-  void _showInfo(BuildContext context) {
-    // Debug log
-    // Debug log
-
+  void showInfo(BuildContext context) {
     if (imageUrl == null || imageUrl!.isEmpty) {
-      // Debug log
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
           title: Text(venueFullName ?? "Venue"),
           content: Text('No image available for ${label ?? "this venue"}.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (onSetAsSource != null) {
+                  onSetAsSource!(this);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Set as Source'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (onSetAsDestination != null) {
+                  onSetAsDestination!(this);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Set as Destination'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
         ),
       );
       return;
     }
 
-    // Debug log
     showDialog(
       context: context,
       builder: (context) => VenueImageViewer(
         title: venueFullName ?? "Venue",
         imageUrl: imageUrl!,
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (onSetAsSource != null) {
+                onSetAsSource!(this);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Set as Source'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (onSetAsDestination != null) {
+                onSetAsDestination!(this);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Set as Destination'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

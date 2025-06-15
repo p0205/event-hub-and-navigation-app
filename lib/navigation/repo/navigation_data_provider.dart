@@ -44,10 +44,6 @@ class NavigationDataProvider {
 
     }
 
-
-
-
-
     // Filter venues and stairs based on floor_id
     final List<MapMarker> filteredVenues = _cachedVenues!['venues']!
         .where((venue) => venue.floorId == currentFloorId)
@@ -56,7 +52,6 @@ class NavigationDataProvider {
     final List<MapMarker> filteredStairs = _cachedVenues!['stairs']!
         .where((stair) => stair.floorId == currentFloorId)
         .toList();
-
 
 
     return {

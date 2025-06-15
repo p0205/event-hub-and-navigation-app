@@ -30,6 +30,8 @@ class InteractiveSvgMap extends StatefulWidget {
   final FloorData currentFloor;
   final Function(int)? onFloorChanged;
   final List<Offset>? transitionPoints;
+  final Function(MapMarker)? onSetAsSource;
+  final Function(MapMarker)? onSetAsDestination;
 
   const InteractiveSvgMap({
     super.key,
@@ -49,6 +51,8 @@ class InteractiveSvgMap extends StatefulWidget {
     required this.currentFloor,
     this.onFloorChanged,
     this.transitionPoints,
+    this.onSetAsSource,
+    this.onSetAsDestination,
   });
 
   @override
@@ -748,6 +752,8 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                                   mapRotation: _rotation,
                                   imageUrl: venue.imageUrl,
                                   floorId: venue.floorId,
+                                  onSetAsSource: widget.onSetAsSource,
+                                  onSetAsDestination: widget.onSetAsDestination,
                                 )
                             ),
 
@@ -802,19 +808,19 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
               },
               onNavigationPressed: widget.onNavigationPressed ?? () {},
               onChangeFloorButtonPressed: _showFloorNavigation,
-
               isCenterEnabled: _currentUserNode != null && (_currentUserNode?.floorId == widget.currentFloor.floorId),
               isNavigationEnabled: !_isAnimating && (_currentUserNode?.floorId == widget.currentFloor.floorId),
-                isLoading: widget.isLoading,
+              isLoading: widget.isLoading,
               onShowLocationPinPressed: () {
                 setState(() {
                   _isShowLocationPin = !_isShowLocationPin;
                 });
               },
               showLocationPin: _isShowLocationPin,
-
-              isNavigatingStatus: (widget.isStepByStep) && (_currentUserNode != null) ,
-
+              isNavigatingStatus: (widget.isStepByStep) && (_currentUserNode != null),
+              venueNodes: widget.venueNodes,
+              onSetAsSource: widget.onSetAsSource,
+              onSetAsDestination: widget.onSetAsDestination,
             ),
 
           ],

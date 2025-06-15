@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:event_hub_and_navigation_app/models/event.dart';
-import 'package:event_hub_and_navigation_app/my_events/blocs/my_events_calendar_view_bloc/bloc/event_bloc.dart';
 import 'package:event_hub_and_navigation_app/repositories/event_repository.dart';
 import 'package:meta/meta.dart';
 

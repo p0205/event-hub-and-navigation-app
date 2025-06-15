@@ -95,7 +95,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     ];
 
     if (mounted) {
-      context.read<NavigationBloc>().add(LoadAllVenuesNameEvent());
+      context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
     }
 
     // Set destination if provided
@@ -175,11 +175,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
         if (_userNode != null) {
           _interactiveMapKey.currentState?.goToPointOnPath(
             _userNode!.coord,
-            alignMapToPathSegmentIndex:
-                _getCurrentNavPaths()?.length != null &&
-                        _getCurrentNavPaths()!.length > 1
-                    ? 0
-                    : null,
+            alignMapToPathSegmentIndex: _getCurrentNavPaths()?.length != null &&
+                    _getCurrentNavPaths()!.length > 1
+                ? 0
+                : null,
           );
         }
       });
@@ -245,7 +244,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
               },
             );
           } else {
-            context.read<NavigationBloc>().add(LoadAllVenuesNameEvent());
+            context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
           }
           return const CircularProgressIndicator();
         },
@@ -280,23 +279,21 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return _transitionPoints[_currentFloorId] ?? [];
   }
 
-  int _getPathIndex(int floorId){
+  int _getPathIndex(int floorId) {
     print("Current floor: $floorId");
     print("Path Index: $_pathsIndexByFloor[floorId]");
     return _pathsIndexByFloor[floorId] ?? 0;
   }
 
   void _setPathIndex(int floorId, int pathIndex) {
-  _pathsIndexByFloor[floorId] = pathIndex; // This line
-}
-
+    _pathsIndexByFloor[floorId] = pathIndex; // This line
+  }
 
   // Handle floor changes in multi-level navigation
   void _handleFloorChange(int floorId) {
     // Map floor names to floor IDs (adjust based on your floor naming)
 
     setState(() {
-
       _currentFloorId = floorId;
       _setPathIndex(floorId, _getPathIndex(floorId));
     });
@@ -308,11 +305,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _interactiveMapKey.currentState?.goToPointOnPath(
             _userNode!.coord,
-            alignMapToPathSegmentIndex:
-                _getCurrentNavPaths()?.length != null &&
-                        _getCurrentNavPaths()!.length > 1
-                    ? 0
-                    : null,
+            alignMapToPathSegmentIndex: _getCurrentNavPaths()?.length != null &&
+                    _getCurrentNavPaths()!.length > 1
+                ? 0
+                : null,
           );
         });
       }
@@ -345,7 +341,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (transitions.isNotEmpty) {
       // Check if user is near a transition point
       for (Offset transitionPoint in transitions) {
-
         if (_userNode != null &&
             (_userNode!.coord - transitionPoint).distance <
                 _destinationReachedThreshold) {
@@ -357,7 +352,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
           currentPaths = _getCurrentNavPaths();
           if (currentPaths?.isNotEmpty == true &&
               currentPaths![_getPathIndex(_currentFloorId)].points.isNotEmpty) {
-            _handleSingleLevelNavigation(currentPaths[_getPathIndex(_currentFloorId)]);
+            _handleSingleLevelNavigation(
+                currentPaths[_getPathIndex(_currentFloorId)]);
           }
           return;
         }
@@ -365,14 +361,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
     }
 
     if (mounted && currentPaths?.isNotEmpty == true) {
-      _handleSingleLevelNavigation(currentPaths![_getPathIndex(_currentFloorId)]);
+      _handleSingleLevelNavigation(
+          currentPaths![_getPathIndex(_currentFloorId)]);
     }
   }
 
   Future<void> _handleFloorTransition() async {
     // Check if map is currently transitioning to avoid conflicts
     if (_interactiveMapKey.currentState?.isTransitioning() == true) {
-      print(" if (_interactiveMapKey.currentState?.isTransitioning() == true) ");
+      print(
+          " if (_interactiveMapKey.currentState?.isTransitioning() == true) ");
       return;
     }
 
@@ -385,7 +383,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
           segment.startFloodId == _currentFloorId) {
         // Check if user is near this transition point
         if (_userNode != null &&
-            (_userNode!.coord - segment.startCoord).distance < _destinationReachedThreshold) {
+            (_userNode!.coord - segment.startCoord).distance <
+                _destinationReachedThreshold) {
           nextFloorId = segment.endFloorId;
           transitionPoint = segment.endCoord;
           break;
@@ -395,7 +394,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
     if (nextFloorId != null && transitionPoint != null) {
       setState(() {
-        _setPathIndex(_currentFloorId, _getPathIndex(_currentFloorId)+1);
+        _setPathIndex(_currentFloorId, _getPathIndex(_currentFloorId) + 1);
         _currentFloorId = nextFloorId!;
         _userNode = Node(
           floorId: nextFloorId,
@@ -420,7 +419,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
         setState(() {
           // Update navigation state for the new floor
           if (_instructionsByFloor.containsKey(nextFloorId)) {
-            List<TurnInstruction> instructions = _instructionsByFloor[nextFloorId]!;
+            List<TurnInstruction> instructions =
+                _instructionsByFloor[nextFloorId]!;
             if (instructions.isNotEmpty) {
               _currentInstruction = instructions[0];
             }
@@ -430,7 +430,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
           if (_pathsByFloor.containsKey(nextFloorId)) {
             List<NavPath> newFloorPaths = _pathsByFloor[nextFloorId]!;
             final int pathIndex = _getPathIndex(nextFloorId!);
-            if (newFloorPaths.isNotEmpty && newFloorPaths[pathIndex].points.isNotEmpty) {
+            if (newFloorPaths.isNotEmpty &&
+                newFloorPaths[pathIndex].points.isNotEmpty) {
               // Update user position to the first point of the new floor's path
               _userNode = Node(
                 floorId: nextFloorId,
@@ -448,7 +449,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
           if (_userNode != null) {
             _interactiveMapKey.currentState?.goToPointOnPath(
               _userNode!.coord,
-              alignMapToPathSegmentIndex: 0,  // Force rotation calculation for first point
+              alignMapToPathSegmentIndex:
+                  0, // Force rotation calculation for first point
               currentPathIndex: _getPathIndex(nextFloorId!),
             );
           }
@@ -598,6 +600,48 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
+  void _handleSetAsSource(MapMarker marker) {
+    setState(() {
+      _selectedSource = marker.label;
+      if (_currentFloorId != marker.floorId) {
+        _currentFloorId = marker.floorId;
+        _loadVenueNodes();
+      }
+      _sourceNode = Node(
+        floorId: marker.floorId,
+        nodeId: -1,
+        name: marker.label!,
+        coord: marker.position,
+      );
+
+      if (mounted) {
+        // Center the map on the source point
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _interactiveMapKey.currentState?.goToPointOnPath(
+            marker.position,
+            alignMapToPathSegmentIndex: null,
+          );
+        });
+      }
+    });
+  }
+
+  void _handleSetAsDestination(MapMarker marker) {
+    setState(() {
+      _selectedDestination = marker.label;
+      if (_currentFloorId != marker.floorId) {
+        _currentFloorId = marker.floorId;
+        _loadVenueNodes();
+      }
+      _desNode = Node(
+        floorId: marker.floorId,
+        nodeId: -1,
+        name: marker.label!,
+        coord: marker.position,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<NavigationBloc, NavigationState>(
@@ -638,6 +682,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 floors: _floors,
                 onFloorChanged: _handleFloorChange,
                 currentFloor: getCurrentFloorData(_currentFloorId),
+                onSetAsSource: _handleSetAsSource,
+                onSetAsDestination: _handleSetAsDestination,
               ),
             ),
             Column(
@@ -709,7 +755,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
-                          if (_selectedSource != null &&
+                          if (_isStepByStep && _getCurrentNavPaths() != null) {
+                            // Reset navigation
+                            setState(() {
+                              _resetNavigationState();
+                              _selectedSource = null;
+                              _selectedDestination = null;
+                            });
+                          } else if (_selectedSource != null &&
                               _selectedDestination != null) {
                             if (_selectedSource == _selectedDestination) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -720,8 +773,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
                             } else {
                               await _showNavigationOptions();
                             }
-
-                            // await _getNavigationPath(_selectedSource!, _selectedDestination!);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -733,9 +784,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: _isLoading
+                        child: _isLoading 
                             ? const CircularProgressIndicator()
-                            : const Text('Find Path'),
+                            : _isStepByStep && _getCurrentNavPaths() != null
+                                ? const Text('Reset')
+                                : const Text('Find Path'),
                       ),
                     ],
                   ),

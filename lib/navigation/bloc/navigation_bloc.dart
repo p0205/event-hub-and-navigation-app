@@ -13,26 +13,25 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
 
 
   NavigationBloc() : super(NavigationInitial()) {
-    on<LoadAllVenuesNameEvent>(_onLoadAllVenuesName);
+    on<LoadAllVenueNodesEvent>(_onLoadAllVenueNodes);
     on<ShowVenueSelectionDialogEvent>(_onSelectSourceDialogShownState);
 
     // on<SelectSourceAndDestinationEvent>
   }
 
-  Future<void> _onLoadAllVenuesName(LoadAllVenuesNameEvent event, Emitter<NavigationState> emit) async {
+  Future<void> _onLoadAllVenueNodes(LoadAllVenueNodesEvent event, Emitter<NavigationState> emit) async {
 
     try {
-      final allVenuesName = await MapService.getAllVenuesName();
-      emit(AllVenuesLoadedState(allVenuesName:allVenuesName));
+      final allVenueNodes = await MapService.getAllVenuesName();
+      emit(AllVenuesLoadedState(allVenuesName:allVenueNodes));
     } catch (e) {
       emit(NavigationError(e.toString()));
     }
   }
   Future<void> _onSelectSourceDialogShownState(ShowVenueSelectionDialogEvent event, Emitter<NavigationState> emit) async {
 
-    print(event.destination);
+   
       emit(SelectSourceDialogShownState(destination: event.destination));
- // Immediately emit initial state to clear the event
-    emit(NavigationInitial());
+
   }
 }

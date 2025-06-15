@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart';
 import 'package:event_hub_and_navigation_app/auth/models/user.dart';
 import 'package:meta/meta.dart';
 

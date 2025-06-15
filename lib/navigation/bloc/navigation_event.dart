@@ -8,10 +8,10 @@ sealed class NavigationEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class LoadAllVenuesNameEvent extends NavigationEvent {
+class LoadAllVenueNodesEvent extends NavigationEvent {
 
 
-  const LoadAllVenuesNameEvent();
+  const LoadAllVenueNodesEvent();
 
 }
 
