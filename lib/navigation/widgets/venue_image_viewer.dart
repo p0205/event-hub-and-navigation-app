@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class VenueImageViewer extends StatelessWidget {
   final String title;
-  final String imageUrl;
+  final String? imageUrl;
   final List<Widget>? actions;
 
   const VenueImageViewer({
@@ -13,6 +13,27 @@ class VenueImageViewer extends StatelessWidget {
     required this.imageUrl,
     this.actions,
   });
+
+  Widget _buildFallbackImage(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.secondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No image available for $title',
+            style: Theme.of(context).textTheme.bodyLarge,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +44,11 @@ class VenueImageViewer extends StatelessWidget {
           // Calculate dimensions for landscape layout
           final screenWidth = MediaQuery.of(context).size.width;
           final screenHeight = MediaQuery.of(context).size.height;
-          
+
           // For landscape images, we want to use more width
-          final maxWidth = screenWidth * 0.95; // Increased from 0.8 to 0.95
-          final maxHeight = screenHeight * 0.5; // Reduced from 0.8 to 0.7
-          
+          final maxWidth = screenWidth * 0.95;
+          final maxHeight = screenHeight * 0.5;
+
           return Container(
             constraints: BoxConstraints(
               maxWidth: maxWidth,
@@ -38,7 +59,7 @@ class VenueImageViewer extends StatelessWidget {
               children: [
                 // Header with title and close button
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).dialogBackgroundColor,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -51,7 +72,7 @@ class VenueImageViewer extends StatelessWidget {
                           title,
                           style: Theme.of(context).textTheme.titleLarge,
                           softWrap: true,
-                          maxLines: 2,
+                          maxLines: 5,
                         ),
                       ),
                       IconButton(
@@ -67,50 +88,33 @@ class VenueImageViewer extends StatelessWidget {
                 Flexible(
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                    child: PhotoView(
-                      imageProvider: CachedNetworkImageProvider(
-                        imageUrl,
-                        errorListener: (error) {
-                        },
-                      ),
-                      minScale: PhotoViewComputedScale.contained,
-                      maxScale: PhotoViewComputedScale.covered * 2,
-                      initialScale: PhotoViewComputedScale.contained,
-                      backgroundDecoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                      ),
-                      loadingBuilder: (context, event) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: event == null
-                                ? 0
-                                : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
+                    child: imageUrl == null
+                        ? _buildFallbackImage(context)
+                        : PhotoView(
+                            imageProvider: CachedNetworkImageProvider(
+                              imageUrl!,
+                              errorListener: (error) {},
+                            ),
+                            minScale: PhotoViewComputedScale.contained,
+                            maxScale: PhotoViewComputedScale.covered * 2,
+                            initialScale: PhotoViewComputedScale.contained,
+                            backgroundDecoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                            ),
+                            loadingBuilder: (context, event) {
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: event == null
+                                      ? 0
+                                      : event.cumulativeBytesLoaded /
+                                          event.expectedTotalBytes!,
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildFallbackImage(context);
+                            },
                           ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
-                                size: 50,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Failed to load image: ${error.toString()}',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.red,
-                                    ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
                   ),
                 ),
                 if (actions != null)
@@ -132,4 +136,4 @@ class VenueImageViewer extends StatelessWidget {
       ),
     );
   }
-} 
+}

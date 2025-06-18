@@ -76,26 +76,10 @@ class AuthRepository {
       });
 
       if (response.statusCode == 200) {
-        final cookieJar = ApiService.dio.interceptors
-            .whereType<CookieManager>()
-            .map((e) => e.cookieJar)
-            .cast<CookieJar>()
-            .first;
-
-        final uri = Uri.parse(AppConstants.BaseUrl + AppConstants.BasePort);
-        final cookies = await cookieJar.loadForRequest(uri);
-
-        final Cookie? jwtCookie = cookies.cast<Cookie?>().firstWhere(
-              (cookie) => cookie?.name == 'jwt',
-              orElse: () => null,
-            );
-
-        if (jwtCookie != null) {
-          final token = jwtCookie.value;
-          await ApiService.persistAndSetToken(token);
-        }
         User user = User.fromJson(response.data);
-        await ApiService.persistAndSetUser(user);
+        if(user.mustChangePassword==false){
+          await _handleAuthCookies(user);
+        }
         return user;
       } else {
         throw AuthException(
@@ -188,5 +172,60 @@ class AuthRepository {
       }
       throw AuthException('An unexpected error occurred while changing password');
     }
+  }
+
+  Future<bool> updateOutsiderPassword(User user, String newPassword) async {
+    try {
+      final response = await ApiService.patch(
+        '/users/${user.id}/update_temp_password',
+        data: {'outsiderNewPassword': newPassword},
+      );
+
+      if (response.statusCode == 200) {
+         await _handleAuthCookies(user.copyWith(mustChangePassword: false));
+        return true;
+      } else {
+        throw AuthException('Failed to update password');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        if (e.response!.statusCode == 404) {
+          throw AuthException('User not found');
+        } else if (e.response!.statusCode == 400) {
+          throw BadRequestException(e.response!.data['error'] ?? 'Invalid password format');
+        }
+        throw AuthException(e.response!.data['error'] ?? 'Failed to update password');
+      } else {
+        throw NetworkException('Please check your internet connection');
+      }
+    } catch (e) {
+      if (e is AuthException) {
+        rethrow;
+      }
+      throw AuthException('An unexpected error occurred while updating password');
+    }
+  }
+
+  Future<void> _handleAuthCookies(User user) async {
+    final cookieJar = ApiService.dio.interceptors
+        .whereType<CookieManager>()
+        .map((e) => e.cookieJar)
+        .cast<CookieJar>()
+        .first;
+
+    final uri = Uri.parse(AppConstants.BaseUrl + AppConstants.BasePort);
+    final cookies = await cookieJar.loadForRequest(uri);
+
+    final Cookie? jwtCookie = cookies.cast<Cookie?>().firstWhere(
+          (cookie) => cookie?.name == 'jwt',
+          orElse: () => null,
+        );
+
+    if (jwtCookie != null) {
+      final token = jwtCookie.value;
+      await ApiService.persistAndSetToken(token);
+    }
+
+    await ApiService.persistAndSetUser(user);
   }
 }

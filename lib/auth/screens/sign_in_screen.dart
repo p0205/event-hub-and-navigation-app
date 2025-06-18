@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../sign_up/screens/sign_up_screen.dart';
+import 'change_password_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -37,11 +38,16 @@ class _SignInScreenState extends State<SignInScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           print("Listener in sign in screen, Current state: $state");
-          if (state is AuthenticatedState) {
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   const SnackBar(content: Text('Sign-in successful!')),
+          if (state is MustChangePasswordState) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ChangePasswordScreen(user: state.user)),
 
-            // );
+            );
+
+          }
+          else if (state is AuthenticatedState) {
 
             Navigator.push(
               context,

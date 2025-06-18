@@ -10,6 +10,14 @@ final class AuthInitialState extends AuthState {}
 
 final class AuthLoadingState extends AuthState {}
 
+final class MustChangePasswordState extends AuthState {
+  final User user;
+
+  MustChangePasswordState({required this.user});
+  @override
+  List<Object?> get props => [user];
+}
+
 final class AuthenticatedState extends AuthState {
   final User user;
   final String? profileError;
@@ -37,9 +45,7 @@ final class ErrorState extends AuthState {
   final String error;
 
   ErrorState({required this.error});
+
   @override
   List<Object?> get props => [error];
 }
-
-
-

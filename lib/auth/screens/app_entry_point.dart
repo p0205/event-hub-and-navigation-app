@@ -1,4 +1,5 @@
 import 'dart:async'; // Required for Timer
+import 'package:event_hub_and_navigation_app/auth/screens/change_password_screen.dart';
 import 'package:event_hub_and_navigation_app/common_widget/bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,7 +82,7 @@ class _AppEntryPointState extends State<AppEntryPoint>
         return _splashScreenFinished &&
             (currentState is AuthenticatedState ||
                 currentState is UnAuthenticatedState ||
-                currentState is AuthInitialState);
+                currentState is AuthInitialState ||currentState is  MustChangePasswordState );
       },
       builder: (context, state) {
         if (state is AuthInitialState) {
@@ -111,7 +112,11 @@ class _AppEntryPointState extends State<AppEntryPoint>
               ),
             ),
           );
-        } else {
+        }
+        else if (state is MustChangePasswordState){
+          return ChangePasswordScreen(user: state.user);
+        }
+        else {
           return MainWrapper();
         }
         // // Once the splash screen duration is over (_splashScreenFinished is true),

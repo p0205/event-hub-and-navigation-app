@@ -244,46 +244,46 @@ class MapMarker extends StatelessWidget {
   }
 
   void showInfo(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(venueFullName ?? "Venue"),
-          content: Text('No image available for ${label ?? "this venue"}.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (onSetAsSource != null) {
-                  onSetAsSource!(this);
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Set as Source'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (onSetAsDestination != null) {
-                  onSetAsDestination!(this);
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Set as Destination'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+    // if (imageUrl == null || imageUrl!.isEmpty) {
+    //   showDialog(
+    //     context: context,
+    //     builder: (context) => AlertDialog(
+    //       title: Text(venueFullName ?? "Venue"),
+    //       content: Text('No image available for ${label ?? "this venue"}.'),
+    //       actions: [
+    //         TextButton(
+    //           onPressed: () {
+    //             if (onSetAsSource != null) {
+    //               onSetAsSource!(this);
+    //             }
+    //             Navigator.pop(context);
+    //           },
+    //           child: const Text('Set as Source'),
+    //         ),
+    //         TextButton(
+    //           onPressed: () {
+    //             if (onSetAsDestination != null) {
+    //               onSetAsDestination!(this);
+    //             }
+    //             Navigator.pop(context);
+    //           },
+    //           child: const Text('Set as Destination'),
+    //         ),
+    //         TextButton(
+    //           onPressed: () => Navigator.pop(context),
+    //           child: const Text('Close'),
+    //         ),
+    //       ],
+    //     ),
+    //   );
+    //   return;
+    // }
 
     showDialog(
       context: context,
       builder: (context) => VenueImageViewer(
         title: venueFullName ?? "Venue",
-        imageUrl: imageUrl!,
+        imageUrl: imageUrl,
         actions: [
           TextButton(
             onPressed: () {

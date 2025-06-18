@@ -27,11 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     // Initialize with user data
-    final state = context.read<AuthBloc>().state;
-    if (state is AuthenticatedState) {
-      _user = state.user;
-      _phoneController.text = state.user.phoneNo ?? '';
-    }
+
   }
 
   @override
@@ -248,8 +244,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, state) {
           if (state is UnAuthenticatedState) {
             return const LoginReminderWidget();
+          }else if(state is AuthInitialState){
+            return const CircularProgressIndicator();
           }
-          
+
+          else if (state is AuthenticatedState) {
+            _user = state.user;
+
+            _phoneController.text = state.user.phoneNo ?? '';
+
           return BlocListener<ProfileBloc, ProfileState>(
             listener: (context, state) {
               if (state is ProfileSuccess) {
@@ -432,7 +435,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-          );
+              );
+          }
+          return const CircularProgressIndicator();
         },
       ),
     );
