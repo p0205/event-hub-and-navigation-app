@@ -233,7 +233,7 @@ class MapMarker extends StatelessWidget {
       left: finalLeft,
       top: finalTop,
       child: GestureDetector(
-        onTap: () => showInfo(context),
+        onTap: onSetAsSource != null || onSetAsDestination != null ? () => showInfo(context) : null,
         child: Transform.rotate(
           angle: -mapRotation, // Inverse of map's rotation
           alignment: rotationAlignment,

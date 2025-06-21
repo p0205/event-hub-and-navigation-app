@@ -256,7 +256,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     _pathsByFloor.clear();
     _transitionPoints.clear();
     _involvedFloors.clear();
-    _currentFloorId = 1;
+
     _sourceNode = null;
     _desNode = null;
     _userNode = null;

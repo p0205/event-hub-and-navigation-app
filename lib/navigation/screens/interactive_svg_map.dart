@@ -787,9 +787,10 @@ class InteractiveSvgMapState extends State<InteractiveSvgMap>
                             MapMarker(
                               position: _currentUserNode!.coord,
                               color: Colors.blue,
-                              radius: 12.0,
+                              radius: 14.0,
                               mapRotation: _rotation,
                               floorId: _currentUserNode!.floorId,
+                              customIconData: Icons.person,
                             ),
                         ],
                       ),
