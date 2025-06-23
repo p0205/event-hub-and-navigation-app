@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="event_hub_and_navigation_app"
+        android:label="FTMK Event Hub"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
