@@ -21,6 +21,15 @@ final class SelectSourceDialogShownState extends NavigationState {
   List<Object> get props => [destination];
 }
 
+final class SelectSourceFromQRState extends NavigationState {
+
+  final Map<String, dynamic> source;
+
+  const SelectSourceFromQRState({required this.source});
+  @override
+  List<Object> get props => [source];
+}
+
 final class AllVenuesLoadedState extends NavigationState {
   // The 'super' call passes the venues up to the base state.
   const AllVenuesLoadedState({required Map<int, List<MapMarker>> allVenuesName})
@@ -47,3 +56,5 @@ final class NavigationError extends NavigationState {
   @override
   List<Object> get props => [message];
 }
+
+

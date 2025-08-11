@@ -9,29 +9,48 @@ part 'navigation_event.dart';
 part 'navigation_state.dart';
 
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
-
-
-
   NavigationBloc() : super(NavigationInitial()) {
     on<LoadAllVenueNodesEvent>(_onLoadAllVenueNodes);
     on<ShowVenueSelectionDialogEvent>(_onSelectSourceDialogShownState);
+    on<SelectSourceFromQR>(_onSelectSourceFromQR);
 
     // on<SelectSourceAndDestinationEvent>
   }
 
-  Future<void> _onLoadAllVenueNodes(LoadAllVenueNodesEvent event, Emitter<NavigationState> emit) async {
-
+  Future<void> _onLoadAllVenueNodes(
+      LoadAllVenueNodesEvent event, Emitter<NavigationState> emit) async {
     try {
       final allVenueNodes = await MapService.getAllVenuesName();
-      emit(AllVenuesLoadedState(allVenuesName:allVenueNodes));
+      emit(AllVenuesLoadedState(allVenuesName: allVenueNodes));
     } catch (e) {
       emit(NavigationError(e.toString()));
     }
   }
-  Future<void> _onSelectSourceDialogShownState(ShowVenueSelectionDialogEvent event, Emitter<NavigationState> emit) async {
 
-   
-      emit(SelectSourceDialogShownState(destination: event.destination));
-
+  Future<void> _onSelectSourceDialogShownState(
+      ShowVenueSelectionDialogEvent event,
+      Emitter<NavigationState> emit) async {
+    emit(SelectSourceDialogShownState(destination: event.destination));
   }
+
+
+  Future<void> _onSelectSourceFromQR(
+      SelectSourceFromQR event, Emitter<NavigationState> emit) async {
+    print("_onSelectSourceFromQR eventnnnn");
+    final Map<String, dynamic> source = await _convertQRToVenue(event.qrData);
+    emit(SelectSourceFromQRState(source: source));
+  }
+}
+
+Future<Map<String, dynamic>> _convertQRToVenue(
+    Map<String, dynamic> qrData) async {
+  return {
+    'id': qrData['id']?.toString() ?? '',
+    'name': qrData['name']?.toString() ?? '',
+    'coordinates': {
+      'x': qrData['coordinates']?['x'] ?? 0.0,
+      'y': qrData['coordinates']?['y'] ?? 0.0,
+    },
+    'floor_level': qrData['floor_level'] ?? 1,
+  };
 }

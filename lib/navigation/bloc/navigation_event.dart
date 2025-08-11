@@ -35,4 +35,17 @@ class SelectSourceAndDestinationEvent extends NavigationEvent {
   List<Object> get props => [source, destination];
 }
 
+class SelectSourceFromQR extends NavigationEvent {
+  
+  final Map<String, dynamic> qrData;
+  
+
+  const SelectSourceFromQR({required this.qrData});
+  
+  @override
+  List<Object> get props => [qrData];
+}
+
+
+
 

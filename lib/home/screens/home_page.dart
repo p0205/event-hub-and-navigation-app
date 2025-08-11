@@ -1,3 +1,4 @@
+import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,9 @@ import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
 import 'package:event_hub_and_navigation_app/common_widget/calendar.dart';
 
-import '../../event_details/screen/event_details_page.dart'; // Ensure this points to calendar_event_model.dart if that's the name
+import '../../event_details/screen/event_details_page.dart';
+import '../../navigation/screens/QRScannerScreen.dart';
+// Navigation screen import removed as it's no longer needed
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +24,6 @@ class _HomePageState extends State<HomePage> {
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
   Map<DateTime, List<CalendarEvent>> _events = {};
-  int? _currentUserId;
 
   // Cache for storing events by month
   final Map<String, List<CalendarEvent>> _eventCache = {};
@@ -53,10 +55,7 @@ class _HomePageState extends State<HomePage> {
     _selectedDay = _focusedDay;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
-
-        _fetchEventsForFocusedMonth();
-
+      _fetchEventsForFocusedMonth();
     });
   }
 
@@ -68,6 +67,7 @@ class _HomePageState extends State<HomePage> {
     // _homeBloc.close();
     super.dispose();
   }
+
 // Use the calendar's helper function for getting events
   List<CalendarEvent> _getEventsForDay(DateTime day) {
     final normalizedDay = EventCalendar.normalizeDate(day);
@@ -84,8 +84,6 @@ class _HomePageState extends State<HomePage> {
 
   // Helper method to calculate and dispatch the event
   void _fetchEventsForFocusedMonth() {
-
-
     // Check if we have cached events for this month
     if (_hasCachedEvents(_focusedDay)) {
       _updateEventsFromCache(_focusedDay);
@@ -97,12 +95,12 @@ class _HomePageState extends State<HomePage> {
 
     // Calculate the end of the _focusedDay's month
     DateTime endOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0)
-        .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999));
+        .add(const Duration(
+            hours: 23, minutes: 59, seconds: 59, milliseconds: 999));
 
     // Dispatch the event with the calculated date range
     _homeBloc.add(
       FetchAllCalendarEventsByMonth(
-
         startDateTime: startOfMonth,
         endDateTime: endOfMonth,
       ),
@@ -116,7 +114,8 @@ class _HomePageState extends State<HomePage> {
       _events = {};
       for (var event in cachedEvents) {
         if (event.startDateTime != null) {
-          DateTime? dateTime = DateHelper.dateTimeFromString(event.startDateTime);
+          DateTime? dateTime =
+              DateHelper.dateTimeFromString(event.startDateTime);
           final dateKey = EventCalendar.normalizeDate(dateTime!);
           if (_events[dateKey] == null) {
             _events[dateKey] = [];
@@ -128,100 +127,112 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _clearCache() {
-    _eventCache.clear();
-    _events.clear();
-    setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Events'),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () async {
+              // Navigate to QR scanner screen with NavigationBloc
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => QRScannerScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: BlocConsumer<HomeBloc, HomeState>(
-            bloc: _homeBloc,
-            listener: (context, state) {
-              if (state is CalendarEventLoaded) {
-                _cacheEvents(_focusedDay, state.events);
+        bloc: _homeBloc,
+        listener: (context, state) {
+          if (state is CalendarEventLoaded) {
+            _cacheEvents(_focusedDay, state.events);
 
-                _events = {};
-                for (var event in state.events) {
-                  if (event.startDateTime != null) {
-                    DateTime? dateTime = DateHelper.dateTimeFromString(event.startDateTime);
-                    final dateKey = EventCalendar.normalizeDate(dateTime!);
-                    if (_events[dateKey] == null) {
-                      _events[dateKey] = [];
-                    }
-                    _events[dateKey]!.add(event);
-                  }
+            _events = {};
+            for (var event in state.events) {
+              if (event.startDateTime != null) {
+                DateTime? dateTime =
+                    DateHelper.dateTimeFromString(event.startDateTime);
+                final dateKey = EventCalendar.normalizeDate(dateTime!);
+                if (_events[dateKey] == null) {
+                  _events[dateKey] = [];
                 }
-
-                setState(() {});
-              } else if (state is CalendarEventError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error loading events: ${state.message}')),
-                );
+                _events[dateKey]!.add(event);
               }
-            },
-            builder: (context, state) {
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: EventCalendar(
-                      focusedDay: _focusedDay,
-                      selectedDay: _selectedDay,
-                      calendarFormat: _calendarFormat,
-                      onDaySelected: _onDaySelected,
-                      onPageChanged: (focusedDay) {
-                        setState(() {
-                          _focusedDay = focusedDay;
-                        });
-                        _fetchEventsForFocusedMonth();
-                      },
-                      onFormatChanged: (format) {
-                        setState(() {
-                          _calendarFormat = format;
-                        });
-                      },
-                      eventLoader: _getEventsForDay,
-                    ),
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child: state is CalendarEventLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : state is CalendarEventError
-                            ? Center(child: Text(state.message))
-                            : _selectedDay == null
+            }
+
+            setState(() {});
+          } else if (state is CalendarEventError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error loading events: ${state.message}')),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: EventCalendar(
+                  focusedDay: _focusedDay,
+                  selectedDay: _selectedDay,
+                  calendarFormat: _calendarFormat,
+                  onDaySelected: _onDaySelected,
+                  onPageChanged: (focusedDay) {
+                    setState(() {
+                      _focusedDay = focusedDay;
+                    });
+                    _fetchEventsForFocusedMonth();
+                  },
+                  onFormatChanged: (format) {
+                    setState(() {
+                      _calendarFormat = format;
+                    });
+                  },
+                  eventLoader: _getEventsForDay,
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: state is CalendarEventLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : state is CalendarEventError
+                        ? Center(child: Text(state.message))
+                        : _selectedDay == null
+                            ? const Center(
+                                child: Text('Select a day to view events'))
+                            : _getEventsForDay(_selectedDay!).isEmpty
                                 ? const Center(
-                                    child: Text('Select a day to view events'))
-                                : _getEventsForDay(_selectedDay!).isEmpty
-                                    ? const Center(
-                                        child: Text(
-                                          'No events for this day',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      )
+                                    child: Text(
+                                      'No events for this day',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  )
                                 : ListView.builder(
-                                        itemCount: _getEventsForDay(_selectedDay!).length,
+                                    itemCount:
+                                        _getEventsForDay(_selectedDay!).length,
                                     itemBuilder: (context, index) {
-                                          final event = _getEventsForDay(_selectedDay!)[index];
+                                      final event = _getEventsForDay(
+                                          _selectedDay!)[index];
                                       return InkWell(
                                         onTap: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                                  builder: (context) => EventDetailsPage(
-                                                    eventId: event.eventId!,
-                                                    shouldShowFeedbackBtn: false,
-                                                  ),
+                                              builder: (context) =>
+                                                  EventDetailsPage(
+                                                eventId: event.eventId!,
+                                                shouldShowFeedbackBtn: false,
+                                              ),
                                             ),
                                           );
                                         },
@@ -231,8 +242,8 @@ class _HomePageState extends State<HomePage> {
                                             vertical: 8.0,
                                           ),
                                           child: ListTile(
-                                            title: Text(
-                                                event.eventName ?? 'Unnamed Event'),
+                                            title: Text(event.eventName ??
+                                                'Unnamed Event'),
                                             subtitle: Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
@@ -241,10 +252,11 @@ class _HomePageState extends State<HomePage> {
                                                   Text(
                                                       'Session: ${event.sessionName}'),
                                                 if (event.venueNames != null)
-                                                  Text('Venue: ${event.venueNames}'),
+                                                  Text(
+                                                      'Venue: ${event.venueNames}'),
                                                 if (event.startDateTime != null)
                                                   Text(
-                                                        'Time: ${DateHelper.dateTimeFromString(event.startDateTime)!.hour}:${DateHelper.dateTimeFromString(event.startDateTime)!.minute.toString().padLeft(2, '0')}',
+                                                    'Time: ${DateHelper.dateTimeFromString(event.startDateTime)!.hour}:${DateHelper.dateTimeFromString(event.startDateTime)!.minute.toString().padLeft(2, '0')}',
                                                   ),
                                               ],
                                             ),
@@ -254,62 +266,11 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     },
                                   ),
-                  ),
-                ],
-              );
-            },
-
-
+              ),
+            ],
+          );
+        },
       ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   type: BottomNavigationBarType.fixed,
-      //   currentIndex: 0,
-      //   onTap: (index) {
-      //     switch (index) {
-      //       case 0:
-      //         break;
-      //       case 1:
-      //         Navigator.push(
-      //           context,
-      //           MaterialPageRoute(
-      //               builder: (context) => MyEventsPage()),
-      //
-      //         );
-      //         break;
-      //       case 2:
-      //         ScaffoldMessenger.of(context).showSnackBar(
-      //           const SnackBar(content: Text('Navigate to Notifications Page')),
-      //         );
-      //         break;
-      //       case 3:
-      //         ScaffoldMessenger.of(context).showSnackBar(
-      //           const SnackBar(
-      //               content: Text('Navigate to Profile/Settings Page')),
-      //         );
-      //         break;
-      //     }
-      //   },
-      //   items: const [
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.home),
-      //       label: 'Home',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.event),
-      //       label: 'My Events',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.notifications),
-      //       label: 'Notifications',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.person),
-      //       label: 'Profile',
-      //     ),
-      //   ],
-      // ),
     );
   }
 }
-
-

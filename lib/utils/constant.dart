@@ -7,7 +7,7 @@ class AppConstants {
   // static const String BaseUrl = "http://10.0.2.2:";
   static const String BasePort = "8080/api";
 
-  static const String BaseUrl = "http://192.168.3.109:";
+  static const String BaseUrl = "http://10.136.144.109:";
   static const String NaviUrl = "find_path";
   static const String NaviPort = "8000";
 

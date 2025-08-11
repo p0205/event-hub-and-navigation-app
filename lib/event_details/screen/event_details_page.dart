@@ -236,6 +236,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     String sessionTimeString =
         '${DateHelper.formatDate(session.startDateTime)} - ${DateHelper.formatDate(session.endDateTime)}';
     final navigationProvider = Provider.of<NavigationProvider>(context);
+    
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       elevation: 2,

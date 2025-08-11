@@ -198,6 +198,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
   }
 
   void _showVenueSelectionDialog(bool isSource) {
+    // Always ensure venues are loaded when dialog opens
+    context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
+    
     showDialog(
       context: context,
       builder: (dialogContext) => BlocBuilder<NavigationBloc, NavigationState>(
@@ -244,9 +247,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
               },
             );
           } else {
-            context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
+            // Show loading indicator while venues are being loaded
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
-          return const CircularProgressIndicator();
         },
       ),
     );
@@ -651,8 +656,23 @@ class _NavigationScreenState extends State<NavigationScreen> {
           setState(() {
             _selectedDestination = state.destination;
           });
-          print("Thisi is from BlocListener");
           _showVenueSelectionDialog(true);
+        } else if (state is SelectSourceFromQRState) {
+          setState(() {
+            _selectedSource = state.source['name'];
+          });
+
+          // Convert QR data to MapMarker with proper null safety
+          final MapMarker sourceMarker = MapMarker(
+            position: Offset(
+              (state.source['coordinates']?['x'] ?? 0.0).toDouble(),
+              (state.source['coordinates']?['y'] ?? 0.0).toDouble(),
+            ),
+            label: state.source['name'] ?? 'Unknown Location',
+            floorId: (state.source['floor_level'] ?? 1) as int,
+          );
+
+          _handleSetAsSource(sourceMarker);
         }
       },
       child: Scaffold(
@@ -784,7 +804,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: _isLoading 
+                        child: _isLoading
                             ? const CircularProgressIndicator()
                             : _isStepByStep && _getCurrentNavPaths() != null
                                 ? const Text('Reset')
