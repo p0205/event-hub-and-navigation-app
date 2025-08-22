@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 import 'package:event_hub_and_navigation_app/utils/date_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/models/calendar_event.dart';
 import 'package:event_hub_and_navigation_app/common_widget/calendar.dart';
+import 'package:event_hub_and_navigation_app/common_widget/navigation_provider.dart';
 
 import '../../event_details/screen/event_details_page.dart';
 import '../../navigation/screens/QRScannerScreen.dart';
@@ -136,14 +140,48 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () async {
-              // Navigate to QR scanner screen with NavigationBloc
-              await Navigator.push(
+            onPressed: () {
+              print('🔍 [HomePage] QR Scanner button pressed');
+
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => QRScannerScreen(),
                 ),
-              );
+              ).then((result) {
+                // This runs immediately when Navigator.pop is called, no async gap
+                if (result != null &&
+                    result is Map &&
+                    result['type'] == 'venue') {
+                  print(
+                      '🏠 [HomePage] Received venue data from QR scanner: ${result['data']}');
+
+                  // Use Timer to add delay without async gap
+                  Timer(Duration(milliseconds: 200), () {
+                    if (mounted) {
+                      try {
+                        final navigationProvider =
+                            Provider.of<NavigationProvider>(context,
+                                listen: false);
+                        navigationProvider.setPage(2);
+                        print(
+                            '🧭 [HomePage] Successfully navigated to navigation screen (page 2)');
+                      } catch (e) {
+                        print(
+                            '❌ [HomePage] Error navigating to navigation screen: $e');
+                      }
+                    } else {
+                      print(
+                          '⚠️ [HomePage] Widget no longer mounted, skipping navigation');
+                    }
+                  });
+                } else {
+                  print(
+                      '🏠 [HomePage] No venue data received or user cancelled QR scan');
+                }
+              }).catchError((error) {
+                print('❌ [HomePage] Error in navigation: $error');
+              });
             },
           ),
         ],

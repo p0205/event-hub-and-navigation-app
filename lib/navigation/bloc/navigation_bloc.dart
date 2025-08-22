@@ -36,9 +36,15 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
 
   Future<void> _onSelectSourceFromQR(
       SelectSourceFromQR event, Emitter<NavigationState> emit) async {
-    print("_onSelectSourceFromQR eventnnnn");
+    print('🎯 [NavigationBloc] _onSelectSourceFromQR called with data: ${event.qrData}');
+
     final Map<String, dynamic> source = await _convertQRToVenue(event.qrData);
+    print('📍 [NavigationBloc] Converted QR data to venue: $source');
+    
+    print('📤 [NavigationBloc] Emitting SelectSourceFrovmQRState');
     emit(SelectSourceFromQRState(source: source));
+    
+    print('✅ [NavigationBloc] SelectSourceFromQRState emitted successfully');
   }
 }
 

@@ -1,16 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:event_hub_and_navigation_app/models/qr_code_types.dart';
 import 'package:event_hub_and_navigation_app/services/qr_code_handler_service.dart';
 import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
-import 'package:event_hub_and_navigation_app/navigation/screens/navigation_screen.dart';
-
-import '../../common_widget/navigation_provider.dart';
 
 class QRScannerScreen extends StatefulWidget {
-  
   const QRScannerScreen({super.key});
 
   @override
@@ -20,6 +17,9 @@ class QRScannerScreen extends StatefulWidget {
 class _QRScannerScreenState extends State<QRScannerScreen> {
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+
+  bool _isProcessing = false; // Add this flag
+  String? _lastProcessedCode; // Add this to avoid duplicate processing
 
   @override
   Widget build(BuildContext context) {
@@ -42,47 +42,119 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
-      if (scanData.code != null) {
-        _processQRCode(scanData.code!);
+      if (scanData.code != null && !_isProcessing) {
+        // Only process if we're not already processing and it's a different code
+        if (_lastProcessedCode != scanData.code) {
+          _lastProcessedCode = scanData.code;
+          _processQRCode(scanData.code!);
+        }
       }
     });
   }
 
   void _processQRCode(String qrData) {
-    try {
-      // Use the new QR code handler service
-      final QRCodeData? qrCodeData = QRCodeHandlerService.parseQRCode(qrData);
-      
-      if (qrCodeData != null) {
-        // Print QR code information
-        _printQRCodeInfo(qrCodeData);
-        
-        // Handle the QR code based on its type
-        QRCodeHandlerService.handleQRCode(qrCodeData, navigationBloc: context.read<NavigationBloc>());
-        
+  if (_isProcessing || !mounted) return;
+  
+  setState(() {
+    _isProcessing = true;
+  });
 
-       _navigateToNavigationScreen();
+  // Pause camera to prevent multiple scans
+  controller?.pauseCamera();
+
+  try {
+    print('🔍 [QRScanner] Processing QR code: $qrData');
+    
+    final QRCodeData? qrCodeData = QRCodeHandlerService.parseQRCode(qrData);
+
+    if (qrCodeData != null) {
+      print('✅ [QRScanner] QR code parsed successfully');
+      
+      _printQRCodeInfo(qrCodeData);
+
+      if (qrCodeData.runtimeType == VenueQRCode) {
+        print('📍 [QRScanner] Processing Venue QR Code');
+      
+        // Handle the venue QR code
+        _handleVenueQRCode(qrCodeData as VenueQRCode);
+        // Don't resume camera since we're navigating away
+        
+      } else if (qrCodeData.runtimeType == AttendanceQRCode) {
+        print('📅 [QRScanner] Processing Attendance QR Code');
+        _showAttendanceDialog(qrCodeData as AttendanceQRCode);
+        
+        // Resume camera after showing dialog
+        _resumeCameraAfterDelay();
       } else {
-        _showError('Invalid or unsupported QR Code format');
+        print('❓ [QRScanner] Unknown QR code type: ${qrCodeData.runtimeType}');
+        _showError('Unsupported QR Code type');
+        _resumeCameraAfterDelay();
       }
-    } catch (e) {
-      _showError('Error processing QR Code: $e');
+    } else {
+      print('❌ [QRScanner] Failed to parse QR code');
+      _showError('Invalid or unsupported QR Code format');
+      _resumeCameraAfterDelay();
     }
+  } catch (e) {
+    print('💥 [QRScanner] Error processing QR Code: $e');
+    _showError('Error processing QR Code: $e');
+    _resumeCameraAfterDelay();
+  }
+}
+
+void _resumeCameraAfterDelay() {
+  // Resume camera after a delay to prevent immediate re-scanning
+  Timer(Duration(seconds: 2), () {
+    if (mounted && controller != null) {
+      controller!.resumeCamera();
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _lastProcessedCode = null;
+        });
+      }
+    }
+  });
+}
+
+  void _handleVenueQRCode(VenueQRCode qrCodeData) {
+    // Dispatch the event to navigation bloc
+    final venueQR = qrCodeData;
+    final qrData = {
+      'id': venueQR.id,
+      'name': venueQR.name,
+      'coordinates': venueQR.coordinates,
+      'floor_level': venueQR.floorLevel,
+      'venue_id': venueQR.venueId,
+      'node_id': venueQR.nodeId,
+      'qr_code_id': venueQR.qrCodeId,
+    };
+
+    print('🚀 [QRScanner] Dispatching SelectSourceFromQR event...');
+    context.read<NavigationBloc>().add(SelectSourceFromQR(qrData: qrData));
+
+    // Return the data to home page and let it handle navigation
+    print('🔙 [QRScanner] Returning QR data to home page...');
+    Navigator.pop(context, {
+      'type': 'venue',
+      'data': qrData,
+    });
   }
 
   void _printQRCodeInfo(QRCodeData qrCodeData) {
     print('=== QR Code Information ===');
     print('Type: ${qrCodeData.type}');
     print('ID: ${qrCodeData.id}');
-    
+
     switch (qrCodeData.runtimeType) {
       case VenueQRCode:
         final venueQR = qrCodeData as VenueQRCode;
         print('Venue Name: ${venueQR.name}');
         print('Floor Level: ${venueQR.floorLevel}');
-        print('Coordinates: (${venueQR.coordinates['x']}, ${venueQR.coordinates['y']})');
+        print(
+            'Coordinates: (${venueQR.coordinates['x']}, ${venueQR.coordinates['y']})');
         break;
-        
+
       case AttendanceQRCode:
         final attendanceQR = qrCodeData as AttendanceQRCode;
         print('Event: ${attendanceQR.eventName}');
@@ -93,19 +165,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     print('========================');
   }
 
-
-
-    void _navigateToNavigationScreen() {
-    // Navigate to navigation screen using NavigationProvider
-    // This switches to the navigation tab (page 2) and closes the QR scanner
-    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
-    navigationProvider.setPage(2);                              
-    Navigator.pop(context); // Close the QR scanner
-  }
-
   void _showAttendanceDialog(AttendanceQRCode attendanceQR) {
+    print(
+        '📋 [QRScanner] Showing attendance dialog for event: ${attendanceQR.eventName}');
+
     showDialog(
       context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Mark Attendance'),
@@ -115,21 +181,33 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             children: [
               Text('Event: ${attendanceQR.eventName}'),
               Text('Session: ${attendanceQR.sessionName}'),
-              Text('Time: ${attendanceQR.startTime.toString().substring(11, 16)} - ${attendanceQR.endTime.toString().substring(11, 16)}'),
+              Text(
+                  'Time: ${attendanceQR.startTime.toString().substring(11, 16)} - ${attendanceQR.endTime.toString().substring(11, 16)}'),
               if (attendanceQR.venueName != null)
                 Text('Venue: ${attendanceQR.venueName}'),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                print('❌ [QRScanner] Attendance marking cancelled');
+                Navigator.of(context).pop(); // Close dialog
+              },
               child: Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
+                print(
+                    '✅ [QRScanner] Marking attendance for event: ${attendanceQR.eventName}');
                 // TODO: Implement attendance marking logic
                 _showSuccess('Attendance marked successfully!');
+
+                // Close dialog first
                 Navigator.of(context).pop();
+
+                // Then close QR scanner and return to previous screen
+                print(
+                    '🔙 [QRScanner] Closing QR scanner after attendance marking');
                 Navigator.of(context).pop(); // Close QR scanner
               },
               child: Text('Mark Attendance'),

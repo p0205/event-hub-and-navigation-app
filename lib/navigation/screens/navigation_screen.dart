@@ -68,6 +68,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   void initState() {
     super.initState();
+    print('🏗️ [NavigationScreen] initState() called');
     _currentFloorId = 1; // Set initial floor to Ground Floor
     _loadVenueNodes();
     _currentInstruction = TurnInstruction(
@@ -95,15 +96,19 @@ class _NavigationScreenState extends State<NavigationScreen> {
     ];
 
     if (mounted) {
+      print('📡 [NavigationScreen] Dispatching LoadAllVenueNodesEvent');
       context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
     }
 
     // Set destination if provided
     if (widget.destination != null) {
+      print('🎯 [NavigationScreen] Setting destination from widget: ${widget.destination}');
       setState(() {
         _selectedDestination = widget.destination;
       });
     }
+    
+    print('✅ [NavigationScreen] initState() completed');
   }
 
   Future<void> _loadVenueNodes() async {
@@ -652,16 +657,21 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return BlocListener<NavigationBloc, NavigationState>(
       bloc: BlocProvider.of<NavigationBloc>(context),
       listener: (context, state) {
+        print('🔄 [NavigationScreen] BlocListener received state: ${state.runtimeType}');
+        
         if (state is SelectSourceDialogShownState) {
+          print('📋 [NavigationScreen] Handling SelectSourceDialogShownState');
           setState(() {
             _selectedDestination = state.destination;
           });
           _showVenueSelectionDialog(true);
         } else if (state is SelectSourceFromQRState) {
+          print('🎯 [NavigationScreen] Handling SelectSourceFromQRState with source: ${state.source}');
           setState(() {
             _selectedSource = state.source['name'];
           });
 
+          print('📍 [NavigationScreen] Creating source marker from QR data');
           // Convert QR data to MapMarker with proper null safety
           final MapMarker sourceMarker = MapMarker(
             position: Offset(
@@ -672,6 +682,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             floorId: (state.source['floor_level'] ?? 1) as int,
           );
 
+          print('🎯 [NavigationScreen] Calling _handleSetAsSource with marker: ${sourceMarker.label}');
           _handleSetAsSource(sourceMarker);
         }
       },
