@@ -11,6 +11,30 @@ final class SignUpInitialState extends SignUpState {}
 
 final class SignUpLoadingState extends SignUpState {}
 
+
+class EmailSentState extends SignUpState {
+  final String email;
+  final String message;
+
+  EmailSentState({
+    required this.email,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [email, message];
+}
+
+class CodeResentState extends SignUpState {
+  final String message;
+
+  CodeResentState({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+
 final class SignUpSuccessState extends SignUpState {
   final String message;
 

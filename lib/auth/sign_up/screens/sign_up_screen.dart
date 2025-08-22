@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/sign_up_bloc.dart';
-import 'sign_up_details_screen.dart';
+import 'email_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -38,20 +38,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
-          } else if (state is ValidSignUpRequestState) {
+          } else if (state is EmailSentState) {
+            // Navigate to email verification screen
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => BlocProvider.value(
                   value: _signUpBloc,
-                  child: const SignUpDetailsScreen(),
+                  child: EmailVerificationScreen(email: state.email),
                 ),
               ),
             );
           }
         },
         listenWhen: (previous, current) {
-          return (current is SignUpErrorState || current is ValidSignUpRequestState);
+          return (current is SignUpErrorState || current is EmailSentState);
         },
         builder: (context, state) {
           return Scaffold(
@@ -121,13 +122,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       if (_formKey.currentState!.validate()) {
                                         context.read<SignUpBloc>().add(
                                               CheckEmailRequestedEvent(
-                                                email: _emailController.text.trim(),
+                                                email: _emailController.text
+                                                    .trim(),
                                               ),
                                             );
                                       }
                                     },
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -138,7 +141,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
                                       ),
                                     )
                                   : const Text(
@@ -178,4 +183,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
-} 
+}

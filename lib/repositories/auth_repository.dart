@@ -8,15 +8,13 @@ import '../services/api.dart';
 import '../utils/constant.dart';
 
 class AuthRepository {
-
-  Future<User?> checkEmail(String email) async {
+  Future<String> checkEmail(String email) async {
     try {
-      final response = await ApiService.get('/auth/check-email', queryParameters: {
+      final response =
+          await ApiService.get('/auth/check-email', queryParameters: {
         'email': email,
       });
-
-        return User.fromJson(response.data);
-     
+      return response.data['message'] ?? 'Verification code sent successfully';
     } on DioException catch (e) {
       if (e.response != null) {
         if (e.response!.statusCode == 409) {
@@ -24,7 +22,8 @@ class AuthRepository {
         } else if (e.response!.statusCode == 404) {
           throw AuthException('Email not found in university database.');
         }
-        throw AuthException(e.response!.data['error'] ?? 'Failed to check email.');
+        throw AuthException(
+            e.response!.data['error'] ?? 'Failed to check email.');
       } else {
         throw NetworkException('Please check your internet connection.');
       }
@@ -36,6 +35,28 @@ class AuthRepository {
     }
   }
 
+  Future<User?> verifyCode(String email, String code) async {
+    try {
+      final response =
+          await ApiService.get('/auth/verifiy-code', queryParameters: {
+        'email': email,
+        'code': code,
+      });
+      return User.fromJson(response.data);
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw AuthException(
+            e.response?.data ?? 'Invalid or expired verification code.');
+      } else {
+        throw NetworkException('Please check your internet connection.');
+      }
+    } catch (e) {
+      if (e is AuthException || e is NetworkException) {
+        rethrow;
+      }
+      throw AuthException('An unexpected error occurred while checking email.');
+    }
+  }
 
   Future<String> signUp(String email, String phoneNo, String password) async {
     try {
@@ -48,14 +69,16 @@ class AuthRepository {
       if (response.statusCode == 201) {
         return response.data['message'] ?? 'Sign up successful';
       } else {
-        throw AuthException('Unexpected response status: ${response.statusCode}');
+        throw AuthException(
+            'Unexpected response status: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.response != null) {
         if (e.response!.statusCode == 409) {
           throw AuthException('User with this email is already registered.');
         } else if (e.response!.statusCode == 400) {
-          throw BadRequestException(e.response!.data['error'] ?? 'Invalid sign up data.');
+          throw BadRequestException(
+              e.response!.data['error'] ?? 'Invalid sign up data.');
         }
         throw AuthException(e.response!.data['error'] ?? 'Failed to sign up.');
       } else {
@@ -68,6 +91,7 @@ class AuthRepository {
       throw AuthException('An unexpected error occurred during sign up.');
     }
   }
+
   Future<User> signIn(String email, String password) async {
     try {
       final response = await ApiService.post('/auth/sign-in', data: {
@@ -77,7 +101,7 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         User user = User.fromJson(response.data);
-        if(user.mustChangePassword==false){
+        if (user.mustChangePassword == false) {
           await _handleAuthCookies(user);
         }
         return user;
@@ -145,7 +169,8 @@ class AuthRepository {
     await ApiService.clearToken();
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
     try {
       final response = await ApiService.post('/auth/change-password', data: {
         'currentPassword': currentPassword,
@@ -160,9 +185,11 @@ class AuthRepository {
         if (e.response!.statusCode == 401) {
           throw InvalidCredentialsException('Current password is incorrect');
         } else if (e.response!.statusCode == 400) {
-          throw BadRequestException(e.response!.data['error'] ?? 'Invalid password data');
+          throw BadRequestException(
+              e.response!.data['error'] ?? 'Invalid password data');
         }
-        throw AuthException(e.response!.data['error'] ?? 'Failed to change password');
+        throw AuthException(
+            e.response!.data['error'] ?? 'Failed to change password');
       } else {
         throw NetworkException('Please check your internet connection');
       }
@@ -170,7 +197,8 @@ class AuthRepository {
       if (e is AuthException || e is NetworkException) {
         rethrow;
       }
-      throw AuthException('An unexpected error occurred while changing password');
+      throw AuthException(
+          'An unexpected error occurred while changing password');
     }
   }
 
@@ -182,7 +210,7 @@ class AuthRepository {
       );
 
       if (response.statusCode == 200) {
-         await _handleAuthCookies(user.copyWith(mustChangePassword: false));
+        await _handleAuthCookies(user.copyWith(mustChangePassword: false));
         return true;
       } else {
         throw AuthException('Failed to update password');
@@ -192,9 +220,11 @@ class AuthRepository {
         if (e.response!.statusCode == 404) {
           throw AuthException('User not found');
         } else if (e.response!.statusCode == 400) {
-          throw BadRequestException(e.response!.data['error'] ?? 'Invalid password format');
+          throw BadRequestException(
+              e.response!.data['error'] ?? 'Invalid password format');
         }
-        throw AuthException(e.response!.data['error'] ?? 'Failed to update password');
+        throw AuthException(
+            e.response!.data['error'] ?? 'Failed to update password');
       } else {
         throw NetworkException('Please check your internet connection');
       }
@@ -202,7 +232,8 @@ class AuthRepository {
       if (e is AuthException) {
         rethrow;
       }
-      throw AuthException('An unexpected error occurred while updating password');
+      throw AuthException(
+          'An unexpected error occurred while updating password');
     }
   }
 
