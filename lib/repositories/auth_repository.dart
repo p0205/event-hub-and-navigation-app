@@ -38,7 +38,7 @@ class AuthRepository {
   Future<User?> verifyCode(String email, String code) async {
     try {
       final response =
-          await ApiService.get('/auth/verifiy-code', queryParameters: {
+          await ApiService.get('/auth/verify-code', queryParameters: {
         'email': email,
         'code': code,
       });
