@@ -6,6 +6,7 @@ import 'package:event_hub_and_navigation_app/auth/screens/app_entry_point.dart';
 import 'package:event_hub_and_navigation_app/feedback/bloc/feedback_bloc.dart';
 import 'package:event_hub_and_navigation_app/home/bloc/home_bloc.dart';
 import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
+import 'package:event_hub_and_navigation_app/qr_scanner/bloc/qr_scanner_bloc.dart';
 import 'package:event_hub_and_navigation_app/services/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,6 +73,9 @@ Future<void> main() async {
         ),
         BlocProvider<ProfileBloc>(
           create: (context) => ProfileBloc(),
+        ),
+        BlocProvider<QrScannerBloc>(
+          create: (context) => QrScannerBloc(),
         ),
         ChangeNotifierProvider(
           create: (context) => NavigationProvider(),

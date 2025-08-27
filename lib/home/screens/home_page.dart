@@ -12,7 +12,7 @@ import 'package:event_hub_and_navigation_app/common_widget/calendar.dart';
 import 'package:event_hub_and_navigation_app/common_widget/navigation_provider.dart';
 
 import '../../event_details/screen/event_details_page.dart';
-import '../../navigation/screens/QRScannerScreen.dart';
+import '../../qr_scanner/screens/QRScannerScreen.dart';
 // Navigation screen import removed as it's no longer needed
 
 class HomePage extends StatefulWidget {

@@ -5,17 +5,19 @@ part 'qr_code_types.g.dart';
 /// Base class for all QR code types
 abstract class QRCodeData {
   final String type;
-  final String id;
+  final String? id;
 
-  const QRCodeData({required this.type, required this.id});
+  const QRCodeData({required this.type, this.id});
 
   factory QRCodeData.fromJson(Map<String, dynamic> json) {
+    print("Enter qr code type ");
     final type = json['type'] as String;
-    
+    print("Enter qr code type $type");
     switch (type) {
       case 'venue':
         return VenueQRCode.fromJson(json);
       case 'attendance':
+        print("It is attendance ");
         return AttendanceQRCode.fromJson(json);
       // case 'event':
       //   return EventQRCode.fromJson(json);
@@ -57,24 +59,13 @@ class VenueQRCode extends QRCodeData {
 @JsonSerializable()
 class AttendanceQRCode extends QRCodeData {
   final int eventId;
-  final String eventName;
   final int sessionId;
-  final String sessionName;
-  final DateTime startTime;
-  final DateTime endTime;
-  final String? venueName;
-  final String? qrCodeId;
+
 
   const AttendanceQRCode({
-    required super.id,
+
     required this.eventId,
-    required this.eventName,
-    required this.sessionId,
-    required this.sessionName,
-    required this.startTime,
-    required this.endTime,
-    this.venueName,
-    this.qrCodeId,
+    required this.sessionId
   }) : super(type: 'attendance');
 
   factory AttendanceQRCode.fromJson(Map<String, dynamic> json) => 

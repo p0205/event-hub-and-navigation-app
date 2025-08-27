@@ -1,13 +1,18 @@
 import 'dart:async';
 
+import 'package:event_hub_and_navigation_app/qr_scanner/bloc/qr_scanner_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:event_hub_and_navigation_app/models/qr_code_types.dart';
 import 'package:event_hub_and_navigation_app/services/qr_code_handler_service.dart';
 import 'package:event_hub_and_navigation_app/navigation/bloc/navigation_bloc.dart';
 
+import '../../auth/bloc/auth_bloc.dart';
+
 class QRScannerScreen extends StatefulWidget {
+
   const QRScannerScreen({super.key});
 
   @override
@@ -16,24 +21,59 @@ class QRScannerScreen extends StatefulWidget {
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
   QRViewController? controller;
+  int? _currentUserId;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
 
   bool _isProcessing = false; // Add this flag
   String? _lastProcessedCode; // Add this to avoid duplicate processing
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthenticatedState) {
+        _currentUserId = authState.user.id;
+      }
+
+    });
+  }
+
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Scan QR Code')),
-      body: QRView(
-        key: qrKey,
-        onQRViewCreated: _onQRViewCreated,
-        overlay: QrScannerOverlayShape(
-          borderColor: Colors.blue,
-          borderRadius: 10,
-          borderLength: 30,
-          borderWidth: 10,
-          cutOutSize: 300,
+    return BlocListener<QrScannerBloc, QrScannerState>(
+      listener: (context, state) {
+        if (state is QRScannerLoading) {
+          // You could show a loading indicator here if needed
+        } else if (state is TakeAttendanceSuccess) {
+          _showDialog('Success', state.message, () {
+            // Optional: You could navigate or resume here
+          });
+        } else if (state is QRScannerError) {
+          _showDialog('Error', state.error, () {
+            // Optional: You could retry or navigate back
+          });
+        } else if (state is UserIsUnAuthenticatedState) {
+          _showDialog('Unauthenticated', state.message, () {
+            // Optional: You could navigate to the sign-in screen
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('Scan QR Code')),
+        body: QRView(
+          key: qrKey,
+          onQRViewCreated: _onQRViewCreated,
+          overlay: QrScannerOverlayShape(
+            borderColor: Colors.blue,
+            borderRadius: 10,
+            borderLength: 30,
+            borderWidth: 10,
+            cutOutSize: 300,
+          ),
         ),
       ),
     );
@@ -67,22 +107,23 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     
     final QRCodeData? qrCodeData = QRCodeHandlerService.parseQRCode(qrData);
 
+
     if (qrCodeData != null) {
       print('✅ [QRScanner] QR code parsed successfully');
-      
+
       _printQRCodeInfo(qrCodeData);
 
       if (qrCodeData.runtimeType == VenueQRCode) {
         print('📍 [QRScanner] Processing Venue QR Code');
-      
+
         // Handle the venue QR code
         _handleVenueQRCode(qrCodeData as VenueQRCode);
         // Don't resume camera since we're navigating away
-        
+
       } else if (qrCodeData.runtimeType == AttendanceQRCode) {
         print('📅 [QRScanner] Processing Attendance QR Code');
-        _showAttendanceDialog(qrCodeData as AttendanceQRCode);
-        
+        _handleAttendanceQRCode(qrData);
+
         // Resume camera after showing dialog
         _resumeCameraAfterDelay();
       } else {
@@ -157,74 +198,42 @@ void _resumeCameraAfterDelay() {
 
       case AttendanceQRCode:
         final attendanceQR = qrCodeData as AttendanceQRCode;
-        print('Event: ${attendanceQR.eventName}');
-        print('Session: ${attendanceQR.sessionName}');
-        print('Time: ${attendanceQR.startTime} - ${attendanceQR.endTime}');
+
         break;
     }
     print('========================');
   }
 
-  void _showAttendanceDialog(AttendanceQRCode attendanceQR) {
-    print(
-        '📋 [QRScanner] Showing attendance dialog for event: ${attendanceQR.eventName}');
+  void _handleAttendanceQRCode(String qrData) {
 
+    context.read<QrScannerBloc>().add(TakeAttendanceEvent(userId: _currentUserId, qrPayloadString:qrData));
+
+
+  }
+  void _showDialog(String title, String content, Function onDismiss) {
+    if (!mounted) return;
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: Text('Mark Attendance'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Event: ${attendanceQR.eventName}'),
-              Text('Session: ${attendanceQR.sessionName}'),
-              Text(
-                  'Time: ${attendanceQR.startTime.toString().substring(11, 16)} - ${attendanceQR.endTime.toString().substring(11, 16)}'),
-              if (attendanceQR.venueName != null)
-                Text('Venue: ${attendanceQR.venueName}'),
-            ],
-          ),
+          title: Text(title),
+          content: Text(content),
           actions: [
             TextButton(
               onPressed: () {
-                print('❌ [QRScanner] Attendance marking cancelled');
-                Navigator.of(context).pop(); // Close dialog
-              },
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                print(
-                    '✅ [QRScanner] Marking attendance for event: ${attendanceQR.eventName}');
-                // TODO: Implement attendance marking logic
-                _showSuccess('Attendance marked successfully!');
-
-                // Close dialog first
                 Navigator.of(context).pop();
-
-                // Then close QR scanner and return to previous screen
-                print(
-                    '🔙 [QRScanner] Closing QR scanner after attendance marking');
-                Navigator.of(context).pop(); // Close QR scanner
+                Navigator.of(context).pop(); // Pop the QRScannerScreen
+                onDismiss();
               },
-              child: Text('Mark Attendance'),
+              child: Text('OK'),
             ),
           ],
         );
       },
-    );
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
+    ).then((_) {
+      // Resume camera after dialog is dismissed
+      _resumeCameraAfterDelay();
+    });
   }
 
   void _showError(String message) {

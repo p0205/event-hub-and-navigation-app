@@ -177,4 +177,23 @@ class EventRepository {
       rethrow; // Re-throw the exception
     }
   }
+
+  Future<void> takeAttendance(String qrCodePayload, int userId) async {
+    try {
+      final response = await ApiService.post(
+          '/check-in', data: {
+            "qrCodePayload": qrCodePayload,
+        "participantId": userId
+      });
+      if (response.statusCode != HttpStatus.ok) {
+        throw Exception(
+            'Failed to check in: ${response.data}');
+      }
+
+    } catch (e) {
+      // Catch any other exceptions
+      print('Failed to check inÏ: $e');
+      rethrow; // Re-throw the exception
+    }
+  }
 }
