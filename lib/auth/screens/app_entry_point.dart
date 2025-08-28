@@ -9,7 +9,12 @@ import 'package:event_hub_and_navigation_app/auth/bloc/auth_bloc.dart';
 // e.g., auth_bloc.dart, auth_event.dart, auth_state.dart
 
 class AppEntryPoint extends StatefulWidget {
-  const AppEntryPoint({super.key});
+  final VoidCallback? onSplashComplete; // Add callback parameter
+
+  const AppEntryPoint({
+    super.key,
+    this.onSplashComplete,
+  });
 
   @override
   State<AppEntryPoint> createState() => _AppEntryPointState();
@@ -20,7 +25,7 @@ class _AppEntryPointState extends State<AppEntryPoint>
   late AnimationController _animationController;
   late Animation<double> _animation;
   bool _splashScreenFinished =
-      false; // Flag to track if splash screen duration is over
+  false; // Flag to track if splash screen duration is over
 
   @override
   void initState() {
@@ -30,7 +35,7 @@ class _AppEntryPointState extends State<AppEntryPoint>
     _animationController = AnimationController(
       vsync: this,
       duration:
-          const Duration(milliseconds: 1500), // Duration of the fade animation
+      const Duration(milliseconds: 1500), // Duration of the fade animation
     );
 
     // Define a fade animation (e.g., from transparent to opaque)
@@ -51,6 +56,10 @@ class _AppEntryPointState extends State<AppEntryPoint>
         setState(() {
           _splashScreenFinished = true; // Mark splash screen as finished
         });
+
+        // Notify parent that splash is complete
+        widget.onSplashComplete?.call();
+
         // Dispatch the AppStarted event *after* the splash screen
         // duration is over.
         context.read<AuthBloc>().add(AppStarted());
@@ -82,7 +91,7 @@ class _AppEntryPointState extends State<AppEntryPoint>
         return _splashScreenFinished &&
             (currentState is AuthenticatedState ||
                 currentState is UnAuthenticatedState ||
-                currentState is AuthInitialState ||currentState is  MustChangePasswordState );
+                currentState is AuthInitialState || currentState is MustChangePasswordState);
       },
       builder: (context, state) {
         if (state is AuthInitialState) {
@@ -119,17 +128,6 @@ class _AppEntryPointState extends State<AppEntryPoint>
         else {
           return MainWrapper();
         }
-        // // Once the splash screen duration is over (_splashScreenFinished is true),
-        // // then render based on the actual AuthBloc state.
-        // else {
-        //   if (state is AuthenticatedState) {
-        //     return const HomePage();
-        //   } else {
-        //     // This will cover UnAuthenticatedState, AuthLoadingState, ErrorState,
-        //     // or any other state that's not AuthenticatedState after splash.
-        //     return const SignInScreen();
-        //   }
-        // }
       },
     );
   }

@@ -26,6 +26,7 @@ import 'auth/sign_up/screens/sign_up_success_screen.dart';
 import 'profile/bloc/profile_bloc.dart';
 import 'profile/screens/profile_screen.dart';
 import 'repositories/user_repository.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -99,6 +100,10 @@ class _MyAppState extends State<MyApp> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
+  // Store pending deep link to handle after splash
+  Uri? _pendingDeepLink;
+  bool _splashCompleted = false;
+
   @override
   void initState() {
     super.initState();
@@ -113,10 +118,8 @@ class _MyAppState extends State<MyApp> {
       final appLink = await _appLinks.getInitialLink();
       if (appLink != null) {
         print('App launched with deep link: $appLink');
-        // Delay handling to ensure app is fully initialized
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          handleDeepLink(appLink);
-        });
+        // Store the deep link instead of handling immediately
+        _pendingDeepLink = appLink;
       }
     } catch (e) {
       print('Failed to get initial app link: $e');
@@ -126,12 +129,32 @@ class _MyAppState extends State<MyApp> {
     _linkSubscription = _appLinks.uriLinkStream.listen(
           (uri) {
         print('Received deep link while app running: $uri');
-        handleDeepLink(uri);
+        if (_splashCompleted) {
+          handleDeepLink(uri);
+        } else {
+          _pendingDeepLink = uri;
+        }
       },
       onError: (err) {
         print('Deep link error: $err');
       },
     );
+  }
+
+  // This method will be called from AppEntryPoint when splash is complete
+  void onSplashComplete() {
+    print('Splash screen completed');
+    _splashCompleted = true;
+
+    // Handle pending deep link if exists
+    if (_pendingDeepLink != null) {
+      print('Handling pending deep link: $_pendingDeepLink');
+      // Add a small delay to ensure the navigation is ready
+      Future.delayed(const Duration(milliseconds: 100), () {
+        handleDeepLink(_pendingDeepLink!);
+        _pendingDeepLink = null;
+      });
+    }
   }
 
   void handleDeepLink(Uri uri) {
@@ -197,7 +220,9 @@ class _MyAppState extends State<MyApp> {
           ),
           initialRoute: '/',
           routes: {
-            '/': (context) => const AppEntryPoint(),
+            '/': (context) => AppEntryPoint(
+              onSplashComplete: onSplashComplete, // Pass callback
+            ),
             '/sign-in': (context) => const SignInScreen(),
             '/registration-success': (context) => const SignUpSuccessScreen(),
             '/profile': (context) => const ProfileScreen(),
