@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:app_links/app_links.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:event_hub_and_navigation_app/auth/screens/app_entry_point.dart';
@@ -14,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'auth/bloc/auth_bloc.dart';
+import 'common_widget/bottom_navigation_bar.dart';
 import 'common_widget/navigation_provider.dart';
 import 'event_details/bloc/event_bloc.dart';
 import 'my_events/blocs/my_events_calendar_view_bloc/bloc/event_bloc.dart';
@@ -23,9 +26,9 @@ import 'auth/sign_up/screens/sign_up_success_screen.dart';
 import 'profile/bloc/profile_bloc.dart';
 import 'profile/screens/profile_screen.dart';
 import 'repositories/user_repository.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // --- IMPORTANT: Add the CookieManager setup here first ---
   // Get the application documents directory for storing cookies persistently
   final appDocDir = await getApplicationDocumentsDirectory();
@@ -40,57 +43,133 @@ Future<void> main() async {
   await ApiService.initializeDioWithInterceptors(); // <--- THIS IS THE MISSING CALL!
   // --- END CALL ---
 
-
   await ApiService.loadTokenFromStorage();
 
   // Initialize the Api client BEFORE running the app
   // This ensures cookies can be managed from the start
 
   runApp(
-    MultiProvider(
-      providers: [
-        RepositoryProvider(create: (context) => UserRepository()),
-        BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(),
-        ),
-        BlocProvider<HomeBloc>(
-          create: (context) => HomeBloc()
-        ),
-        BlocProvider<EventDetailsBloc>(
-            create: (context) => EventDetailsBloc()
-        ),
-        BlocProvider<MyEventsCalendarViewBloc>(
-            create: (context) => MyEventsCalendarViewBloc()
-        ),
-        BlocProvider<MyEventsTabViewBloc>(
-            create: (context) => MyEventsTabViewBloc()
-        ),
-        BlocProvider<FeedbackBloc>(
-            create: (context) => FeedbackBloc()
-        ),
-        BlocProvider<NavigationBloc>(
-            create: (context) => NavigationBloc()
-        ),
-        BlocProvider<ProfileBloc>(
-          create: (context) => ProfileBloc(),
-        ),
-        BlocProvider<QrScannerBloc>(
-          create: (context) => QrScannerBloc(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => NavigationProvider(),
-          child: const MyApp(),
-        ),
-        // Add other BLoCs here
-      ],
-      child: const MyApp()))
-    ;
+      MultiProvider(
+          providers: [
+            RepositoryProvider(create: (context) => UserRepository()),
+            BlocProvider<AuthBloc>(
+              create: (context) => AuthBloc(),
+            ),
+            BlocProvider<HomeBloc>(
+                create: (context) => HomeBloc()
+            ),
+            BlocProvider<EventDetailsBloc>(
+                create: (context) => EventDetailsBloc()
+            ),
+            BlocProvider<MyEventsCalendarViewBloc>(
+                create: (context) => MyEventsCalendarViewBloc()
+            ),
+            BlocProvider<MyEventsTabViewBloc>(
+                create: (context) => MyEventsTabViewBloc()
+            ),
+            BlocProvider<FeedbackBloc>(
+                create: (context) => FeedbackBloc()
+            ),
+            BlocProvider<NavigationBloc>(
+                create: (context) => NavigationBloc()
+            ),
+            BlocProvider<ProfileBloc>(
+              create: (context) => ProfileBloc(),
+            ),
+            BlocProvider<QrScannerBloc>(
+              create: (context) => QrScannerBloc(),
+            ),
+            ChangeNotifierProvider(
+              create: (context) => NavigationProvider(),
+            ),
+            // Add other BLoCs here
+          ],
+          child: const MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    initDeepLinks();
+  }
+
+  Future<void> initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Handle app launch from deep link (when app is closed)
+    try {
+      final appLink = await _appLinks.getInitialLink();
+      if (appLink != null) {
+        print('App launched with deep link: $appLink');
+        // Delay handling to ensure app is fully initialized
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          handleDeepLink(appLink);
+        });
+      }
+    } catch (e) {
+      print('Failed to get initial app link: $e');
+    }
+
+    // Handle deep links while app is running
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+          (uri) {
+        print('Received deep link while app running: $uri');
+        handleDeepLink(uri);
+      },
+      onError: (err) {
+        print('Deep link error: $err');
+      },
+    );
+  }
+
+  void handleDeepLink(Uri uri) {
+    print('Handling deep link: $uri');
+
+    if (uri.scheme == 'ftmkeventhub') {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        print('Navigator context not available');
+        return;
+      }
+
+      if (uri.host == 'navigate') {
+        // Extract venue parameter
+        String? venue = uri.queryParameters['venue'];
+
+        print('Navigation parameters: venue=$venue');
+
+        // Navigate to MainWrapper and switch to Map tab (index 2)
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/main',
+              (route) => false, // Remove all previous routes
+          arguments: {
+            'initialTab': 2, // Map tab index
+            'venue': venue,
+          },
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -105,11 +184,12 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey, // Add this for deep link navigation
           title: 'Event Hub',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 245, 197, 66)),
-            appBarTheme:  AppBarTheme(
+            appBarTheme: AppBarTheme(
                 centerTitle: true,
                 backgroundColor: Color.fromARGB(255, 245, 197, 66)
             ),
@@ -121,6 +201,7 @@ class MyApp extends StatelessWidget {
             '/sign-in': (context) => const SignInScreen(),
             '/registration-success': (context) => const SignUpSuccessScreen(),
             '/profile': (context) => const ProfileScreen(),
+            '/main': (context) => MainWrapper(), // Add route for MainWrapper
           },
         ),
       ),

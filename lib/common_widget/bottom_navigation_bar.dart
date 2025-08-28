@@ -1,5 +1,3 @@
-
-
 import 'package:event_hub_and_navigation_app/my_events/screens/my_events_page.dart';
 import 'package:event_hub_and_navigation_app/profile/screens/profile_screen.dart';
 
@@ -10,16 +8,45 @@ import '../home/screens/home_page.dart';
 import '../navigation/screens/navigation_screen.dart';
 import 'navigation_provider.dart';
 
+class MainWrapper extends StatefulWidget {
+  const MainWrapper({super.key});
 
-  class MainWrapper extends StatelessWidget {
-   MainWrapper({super.key});
+  @override
+  State<MainWrapper> createState() => _MainWrapperState();
+}
 
+class _MainWrapperState extends State<MainWrapper> {
   final List<Widget> _pages = [
-  const HomePage(),
-  const MyEventsPage(),
-  NavigationScreen(),
-  const ProfileScreen(),
+    const HomePage(),
+    const MyEventsPage(),
+    NavigationScreen(),
+    const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Handle deep link parameters after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+      if (args != null) {
+        final int? initialTab = args['initialTab'];
+        final String? venue = args['venue'];
+
+        // Switch to the specified tab (Map tab)
+        if (initialTab != null) {
+          final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+          navigationProvider.setPage(initialTab);
+
+          // You can also pass the venue information to your NavigationScreen here
+          // For example, you could store it in a provider or pass it via some other means
+          print('Switched to tab $initialTab with venue: $venue');
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +77,6 @@ import 'navigation_provider.dart';
           onTap: (index) => navigationProvider.setPage(index),
           backgroundColor: Colors.transparent, // Make it transparent so the Container's color shows
           elevation: 0, // Remove default shadow of BottomNavigationBar
-
 
           selectedItemColor: themeColor, // Active icon color
           unselectedItemColor: Colors.grey[600], // Inactive icon color
