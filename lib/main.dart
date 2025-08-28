@@ -146,6 +146,7 @@ class _MyAppState extends State<MyApp> {
     print('Splash screen completed');
     _splashCompleted = true;
 
+
     // Handle pending deep link if exists
     if (_pendingDeepLink != null) {
       print('Handling pending deep link: $_pendingDeepLink');
@@ -172,6 +173,10 @@ class _MyAppState extends State<MyApp> {
         String? venue = uri.queryParameters['venue'];
 
         print('Navigation parameters: venue=$venue');
+        if(venue!=null){
+          context.read<NavigationBloc>().add(SelectDestinationFromDeepLink(destination: venue));
+        }
+
 
         // Navigate to MainWrapper and switch to Map tab (index 2)
         Navigator.pushNamedAndRemoveUntil(

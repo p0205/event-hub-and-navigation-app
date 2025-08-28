@@ -21,6 +21,16 @@ final class SelectSourceDialogShownState extends NavigationState {
   List<Object> get props => [destination];
 }
 
+final class SelectDestinationFromDeepLinkState extends NavigationState {
+
+  final String destination;
+
+  const SelectDestinationFromDeepLinkState({required this.destination});
+  @override
+  List<Object> get props => [destination];
+}
+
+
 final class SelectSourceFromQRState extends NavigationState {
 
   final Map<String, dynamic> source;

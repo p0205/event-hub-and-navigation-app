@@ -94,7 +94,15 @@ class _NavigationScreenState extends State<NavigationScreen> {
           svgPath: 'assets/floorplan/ftmk_gf.svg',
           floorId: 1),
     ];
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentState = context.read<NavigationBloc>().state;
+      if (currentState is SelectDestinationFromDeepLinkState) {
+        print('🔗 [NavigationScreen] Deep link destination found in initState: ${currentState.destination}');
+        setState(() {
+          _selectedDestination = currentState.destination;
+        });
+      }
+    });
     if (mounted) {
       print('📡 [NavigationScreen] Dispatching LoadAllVenueNodesEvent');
       context.read<NavigationBloc>().add(LoadAllVenueNodesEvent());
@@ -107,7 +115,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
         _selectedDestination = widget.destination;
       });
     }
-    
+    // Check for deep link destination in current state
+
     print('✅ [NavigationScreen] initState() completed');
   }
 
@@ -659,7 +668,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       listener: (context, state) {
         print('🔄 [NavigationScreen] BlocListener received state: ${state.runtimeType}');
         
-        if (state is SelectSourceDialogShownState) {
+        if (state is SelectSourceDialogShownState  ) {
           print('📋 [NavigationScreen] Handling SelectSourceDialogShownState');
           setState(() {
             _selectedDestination = state.destination;
@@ -684,6 +693,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
           print('🎯 [NavigationScreen] Calling _handleSetAsSource with marker: ${sourceMarker.label}');
           _handleSetAsSource(sourceMarker);
+        } else if (state is SelectDestinationFromDeepLinkState) {
+          print('🎯 [NavigationScreen] Handling SelectDestinationFromDeepLinkState with destination: ${state.destination}');
+          setState(() {
+            _selectedDestination = state.destination;
+          });
+
         }
       },
       child: Scaffold(

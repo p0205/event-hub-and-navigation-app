@@ -46,6 +46,17 @@ class SelectSourceFromQR extends NavigationEvent {
   List<Object> get props => [qrData];
 }
 
+class SelectDestinationFromDeepLink extends NavigationEvent {
+
+  final String destination;
+
+
+  const SelectDestinationFromDeepLink({required this.destination});
+
+  @override
+  List<Object> get props => [destination];
+}
+
 
 
 

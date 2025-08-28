@@ -12,6 +12,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   NavigationBloc() : super(NavigationInitial()) {
     on<LoadAllVenueNodesEvent>(_onLoadAllVenueNodes);
     on<ShowVenueSelectionDialogEvent>(_onSelectSourceDialogShownState);
+    on<SelectDestinationFromDeepLink>(_onSelectDestinationFromDeepLink);
     on<SelectSourceFromQR>(_onSelectSourceFromQR);
 
     // on<SelectSourceAndDestinationEvent>
@@ -31,6 +32,12 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
       ShowVenueSelectionDialogEvent event,
       Emitter<NavigationState> emit) async {
     emit(SelectSourceDialogShownState(destination: event.destination));
+  }
+
+  Future<void> _onSelectDestinationFromDeepLink(
+      SelectDestinationFromDeepLink event,
+      Emitter<NavigationState> emit) async {
+    emit(SelectDestinationFromDeepLinkState(destination: event.destination));
   }
 
 
